@@ -41,9 +41,7 @@ class Agent {
       const runnable = result > 50;
   
       if(functionName === 'Sum'){
-       console.log('in working branch')
-       console.log('writing something in main code with commit ')
-       console.log('writing code in working branch for checking conflict ')
+  
         for (const condition of conditions) {
           if (condition.isRunnable === runnable) {
             return condition.executeUserAgent;

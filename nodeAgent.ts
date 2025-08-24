@@ -42,6 +42,7 @@ class Agent {
   
       if(functionName === 'Sum'){
        console.log('in working branch')
+       console.log('writing code in working branch for checking conflict ')
         for (const condition of conditions) {
           if (condition.isRunnable === runnable) {
             return condition.executeUserAgent;

@@ -31,6 +31,7 @@ while (true) {
   console.log("Execution nextNodeId:", nextNodeId);
 
   if (typeof nextNodeId === "string") {
+    console.log('type of node result is ',typeof nextNodeId)
     const nextNode = flow.find((node) => node.userAgentName === nextNodeId);
     if (nextNode) {
       console.log("➡️ Transitioning to next node:", nextNode.displayAgentName);

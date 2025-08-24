@@ -7,11 +7,11 @@ import { Condition, FlowNode } from "./types";
 const prompt = require("prompt-sync")();
 const conditions: Condition[] = [
   {
-    "executeUserAgent": "functionalAgent_774bdf97-cafe-47bb-8c99-1549a8be74e5",
+    "executeUserAgent": "functionalAgent_74bccf24-bb4b-427e-8514-10437bdeabe5",
     "isRunnable": true
   },
   {
-    "executeUserAgent": "functionalAgent_c4274f9b-879c-4da3-8be3-3e01d998fd3f",
+    "executeUserAgent": "functionalAgent_a063c97f-81c7-4b6e-878f-478a2eb6f464",
     "isRunnable": false
   }
 ]
@@ -39,12 +39,16 @@ class Agent {
 
       // Determine the next step based on the result (e.g., if result > 50)
       const runnable = result > 50;
-      
-      for (const condition of conditions) {
-        if (condition.isRunnable === runnable) {
-          return condition.executeUserAgent;
+  
+      if(functionName === 'Sum'){
+
+        for (const condition of conditions) {
+          if (condition.isRunnable === runnable) {
+            return condition.executeUserAgent;
+          }
         }
       }
+
       return result; // If no condition met, return the numerical result
     } catch (error) {
       console.error("❌ Error during execution:", error);

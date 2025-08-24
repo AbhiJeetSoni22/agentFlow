@@ -1,101 +1,79 @@
 // functionalAgent.ts
 
-import { toolExecutor } from "./toolExecutor";
-import { Tools } from "./tools";
-import { Condition, FlowNode } from "./types";
+import { LLMService } from "./llmService";
+import { AvailableTools, Condition, FlowNode } from "./types";
 
-const prompt = require("prompt-sync")();
-const conditions: Condition[] = [
-  {
-    "executeUserAgent": "functionalAgent_74bccf24-bb4b-427e-8514-10437bdeabe5",
-    "isRunnable": true
-  },
-  {
-    "executeUserAgent": "functionalAgent_a063c97f-81c7-4b6e-878f-478a2eb6f464",
-    "isRunnable": false
-  }
-]
 // Agent Class
 class Agent {
   private node: FlowNode;
-  private param1: number; // No longer optional, will always be provided
-  private param2: number; // No longer optional, will always be provided
+  private query: string;
+  private availableTools: AvailableTools[];
 
   // Constructor now expects parameters to be provided
-  constructor(node: FlowNode, param1: number, param2: number) {
+  constructor(node: FlowNode, query: string, availableTools: AvailableTools[]) {
     this.node = node;
-    this.param1 = param1;
-    this.param2 = param2;
+    this.query = query;
+    this.availableTools = availableTools;
   }
 
-  run(): string | number {
-    let result: number;
-    const functionName = this.node.availableFunctions[0];
+  async run(): Promise<string | number> {
 
+    
     try {
-      // Pass the determined parameters to the toolExecutor
-      result = toolExecutor(functionName, this.param1, this.param2);
-      console.log(`✅ ${functionName} Result with (${this.param1}, ${this.param2}):`, result);
+      const functionName = this.node.availableFunctions[0];
 
-      // Determine the next step based on the result (e.g., if result > 50)
-      const runnable = result > 50;
-      
-      if(functionName === 'Sum'){
-  
-        for (const condition of conditions) {
-          if (condition.isRunnable === runnable) {
-            return condition.executeUserAgent;
-          }
-        }
+      const llm = new LLMService("grok");
+
+      const prompt = `
+You are a tool selector agent.
+You will be given:
+1. Function name: ${functionName}
+2. Available tools: ${JSON.stringify(this.availableTools)}
+
+Your task:
+- Compare the given function name with the available tools.
+- Pick the most relevant tool.
+- Return only a JSON object with "toolId" and "toolName" and do not add anything else from your side.
+- If no tool matches, return {"toolName":"not found"}.
+`;
+
+      const response = await llm.call(prompt, [], this.query);
+
+      try {
+        const parsed = JSON.parse(response);
+        console.log("✅ Parsed response:", parsed);
+        return parsed;
+      } catch (parseError) {
+        console.log("❌ JSON parse error:", parseError);
+        return 'Tool not Found';
       }
-
-      return result; // If no condition met, return the numerical result
-    } catch (error) {
-      console.error("❌ Error during execution:", error);
-      // Return an appropriate error string or handle more robustly
-      return "Error";
+    } catch (error: any) {
+      console.log("❌ Error in Agent.run():", error.message);
+      throw error;
     }
   }
 }
 
-export function nodeAgent(
+export async function nodeAgent(
   node: FlowNode,
-  param1?: number,
-  param2?: number
-): string | number {
-  let finalParam1: number;
-  let finalParam2: number;
-
-  // Check if parameters were provided to this function call
-  if (param1 !== undefined && param2 !== undefined) {
-    finalParam1 = param1;
-    finalParam2 = param2;
-    console.log(`Parameters provided to runFunctionalAgent: ${finalParam1}, ${finalParam2}`);
-  } else {
-    // If parameters are not provided, prompt the user
-    console.log(`\nAgent: ${node.displayAgentName}`); // Display agent name before prompting
-    const inputA = prompt("Please enter the first parameter (a): ");
-    const inputB = prompt("Please enter the second parameter (b): ");
-
-    finalParam1 = parseFloat(inputA);
-    finalParam2 = parseFloat(inputB);
-
-    if (isNaN(finalParam1) || isNaN(finalParam2)) {
-      console.warn("Invalid input received. Using default values (0, 0) for calculation.");
-      finalParam1 = 0;
-      finalParam2 = 0;
-    }
-    console.log(`Parameters obtained via prompt: ${finalParam1}, ${finalParam2}`);
-  }
+  query: string,
+  availableTools: AvailableTools[]
+): Promise<string | number> {
+  console.log("🚀 nodeAgent function called");
+  console.log("Node display name:", node.displayAgentName);
+  console.log("Available functions:", node.availableFunctions);
 
   try {
-    // Pass the determined parameters to the Agent constructor
-    const myAgent = new Agent(node, finalParam1, finalParam2);
-    return myAgent.run();
+
+    const agent = new Agent(node, query, availableTools);
+    const result = await agent.run();
+    return result;
   } catch (error) {
+    console.error("❌ Error in nodeAgent:", error);
     if (error instanceof Error) {
-      console.error("❌ Error in runFunctionalAgent:", error.message);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
     }
-    return "Error"; // Handle errors from agent construction or initial run
+    return "Error";
   }
 }

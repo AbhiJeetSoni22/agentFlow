@@ -1,58 +1,61 @@
 import dbConnect from "./db";
-import {  nodeAgent } from "./nodeAgent";
+import { nodeAgent } from "./nodeAgent";
 
-import dotenv from 'dotenv'
-import {BotFlow} from '../src/models'
+import dotenv from "dotenv";
+import { BotFlow } from "../src/models";
+import { fetAvailableTools } from "./tools";
+import { AvailableTools } from "./types";
 
-dotenv.config()
+dotenv.config();
 // Run tests
-async function main(flowId:string){
+async function main(flowId: string,query:string) {
   try {
     const uri = process.env.DB_URI as string;
- 
-    if(!uri){
-      console.log('uri not found')
+    if (!uri) {
+      console.log("uri not found");
     }
     await dbConnect(uri);
-  const flowObject = await BotFlow.findById(flowId)
-      let flow: any[] = flowObject?.flow ?? [];
+   const availableTools: AvailableTools[] = (await fetAvailableTools(flowId)) || [];
+
+    const flowObject = await BotFlow.findById(flowId);
+    let flow: any[] = flowObject?.flow ?? [];
     if (flow.length === 0) {
       console.log("⚠️ No nodes found in flow");
       return;
     }
 
-let currentNode = flow[0];
-let nextNodeId: string | number;
+    let currentNode = flow[0];
+    let nextNodeId: string | number;
 
+    nextNodeId = await nodeAgent(currentNode,query,availableTools);
+    // while (true) {
+    //   nextNodeId = nodeAgent(currentNode,query,availableTools);
+    //   console.log("Current Agent:", currentNode.displayAgentName);
+    //   console.log("Execution nextNodeId:", nextNodeId);
 
-console.log('flow first node condition',flow[0].condition)
-while (true) {
-
-  nextNodeId = nodeAgent(currentNode);
-  console.log("Current Agent:", currentNode.displayAgentName);
-  console.log("Execution nextNodeId:", nextNodeId);
-
-  if (typeof nextNodeId === "string") {
-    console.log('type of node result is ',typeof nextNodeId)
-    const nextNode = flow.find((node) => node.userAgentName === nextNodeId);
-    if (nextNode) {
-      console.log("➡️ Transitioning to next node:", nextNode.displayAgentName);
-      currentNode = nextNode;
-    } else {
-      console.error("❌ Error: Next node not found with ID:", nextNodeId);
-      break;
-    }
-  } else {
-    console.log("✅ Workflow completed. Final output:", nextNodeId);
-    break; // Exit the loop
-  }
-}
+    //   if (typeof nextNodeId === "string") {
+    //     const nextNode = flow.find((node) => node.userAgentName === nextNodeId);
+    //     if (nextNode) {
+    //       console.log(
+    //         "➡️ Transitioning to next node:",
+    //         nextNode.displayAgentName
+    //       );
+    //       currentNode = nextNode;
+    //     } else {
+    //       console.error("❌ Error: Next node not found with ID:", nextNodeId);
+    //       break;
+    //     }
+    //   } else {
+    //     console.log("✅ Workflow completed. Final output:", nextNodeId);
+    //     break; // Exit the loop
+    //   }
+    // }
   } catch (error: any) {
-    console.log('error in main function',error.message)
+    console.log("error in main function", error.message);
   }
 }
 
-main('68a97ef9b953c4767e977052')
+main("68a97ef9b953c4767e977052","i want to sum 10 and 20");
 // const flow: FlowNode[] = [
 //   {
 //     agentName: "functionalAgent",
@@ -108,5 +111,3 @@ main('68a97ef9b953c4767e977052')
 //     _id: "68a1d5a404eefda5cede188a",
 //   },
 // ];
-
-

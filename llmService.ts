@@ -25,11 +25,11 @@ export class LLMService {
 
     constructor(model: string = 'grok') {
         // Validate API key
-      
+   
 
         // Initialize xAI provider
         this.xaiProvider = createXai({
-            apiKey: process.env.GROK_API_KEY,
+                  apiKey: process.env.GROK_API_KEY,
         });
    
         // Set the appropriate call method based on model

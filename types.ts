@@ -40,6 +40,11 @@ export interface FlowNode {
   _id?: string;
 }
 
+export interface AvailableTools{
+  toolId :string;
+  toolName: string;
+}
+
 export   interface Tools {
   sum(): number;
   division(): number;

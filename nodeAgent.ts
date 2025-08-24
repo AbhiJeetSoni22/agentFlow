@@ -41,7 +41,7 @@ class Agent {
       const runnable = result > 50;
   
       if(functionName === 'Sum'){
-
+       console.log('in working branch')
         for (const condition of conditions) {
           if (condition.isRunnable === runnable) {
             return condition.executeUserAgent;

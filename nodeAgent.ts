@@ -39,7 +39,7 @@ class Agent {
 
       // Determine the next step based on the result (e.g., if result > 50)
       const runnable = result > 50;
-  
+      
       if(functionName === 'Sum'){
   
         for (const condition of conditions) {

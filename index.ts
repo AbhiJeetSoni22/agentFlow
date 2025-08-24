@@ -3,11 +3,13 @@ import {  nodeAgent } from "./nodeAgent";
 
 import dotenv from 'dotenv'
 import {BotFlow} from '../src/models'
+
 dotenv.config()
 // Run tests
 async function main(flowId:string){
   try {
     const uri = process.env.DB_URI as string;
+ 
     if(!uri){
       console.log('uri not found')
     }

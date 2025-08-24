@@ -1,4 +1,4 @@
-import {  GROK_CONFIG } from './constants';
+
 
 // Corrected import for the Grok/xAI provider
 import { createXai } from '@ai-sdk/xai';
@@ -30,7 +30,7 @@ export class LLMService {
 
         // FIX: Corrected the casing from createXAI to createXai
         this.xaiProvider = createXai({
-            apiKey: GROK_CONFIG.API_KEY as string,
+            apiKey: process.env.GROK_API_KEY as string,
         });
 
         // Set the appropriate call method based on model

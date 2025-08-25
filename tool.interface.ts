@@ -1,0 +1,36 @@
+// file: tool.interface.ts
+
+// Since the fetch is .lean(), _id is a plain ObjectId string
+// (or a Mongoose ObjectId type which can be treated as a string)
+
+export interface Tool {
+    _id: string; // The _id is not a nested object, it's a string
+    toolName: string;
+    toolDescription: string;
+    parameters: Array<{
+        key: string;
+        validation: string;
+        _id: string; // This will also be a string
+    }>;
+    companyId: string;
+    botId: string;
+    toolConfig: {
+        apiName: string;
+        method: string;
+        baseUrl: string;
+        apiEndpoint: string;
+        headers: Array<{
+            key: string;
+            value: string;
+        }>;
+        dynamicParams: Array<{
+            key: string;
+            location: string;
+            required: boolean;
+            validation?: string;
+        }>;
+        tools: any[];
+    };
+    toolType: string;
+    __v: number;
+}

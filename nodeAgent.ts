@@ -1,46 +1,43 @@
 // functionalAgent.ts
 
+
+import { IExecutingBotFlow } from "./executingFlow.interface";
+import { ExecutingBotFlow } from "./executingFlow.schema";
 import { LLMService } from "./llmService";
-import { AvailableTools, Condition, FlowNode } from "./types";
+import { fetchAvailableTool } from "./tools";
+import { AvailableTool, FlowNode } from "./types";
 
 // Agent Class
 class Agent {
   private node: FlowNode;
   private query: string;
-  private availableTools: AvailableTools[];
+  private executingFlow: IExecutingBotFlow;
+  // private availableTool: AvailableTools;
 
   // Constructor now expects parameters to be provided
-  constructor(node: FlowNode, query: string, availableTools: AvailableTools[]) {
+  constructor(node: FlowNode, query: string, executingFlow:IExecutingBotFlow) {
     this.node = node;
     this.query = query;
-    this.availableTools = availableTools;
+    this.executingFlow= executingFlow
   }
 
   async run(): Promise<string | number> {
 
     
     try {
-      const functionName = this.node.availableFunctions[0];
-
-      const llm = new LLMService("grok");
-
-      const prompt = `
-You are a tool selector agent.
-You will be given:
-1. Function name: ${functionName}
-2. Available tools: ${JSON.stringify(this.availableTools)}
-
-Your task:
-- Compare the given function name with the available tools.
-- Pick the most relevant tool.
-- Return only a JSON object with "toolId" and "toolName" and do not add anything else from your side.
-- If no tool matches, return {"toolName":"not found"}.
-`;
-
-      const response = await llm.call(prompt, [], this.query);
-
+      // tool id is always at the first index of the availableFunction array
+      const toolId= this.node.availableFunctions[0];
+// fetching tool as per toolId using function.
+      const tool = await fetchAvailableTool(toolId)
+  
+      const executingFlowId = this.executingFlow.id;
+      console.log('to update ',executingFlowId)
+      // await ExecutingBotFlow.findByIdAndUpdate({_id:executingFlowId},{
+      //   this.
+      // })
+     
       try {
-        const parsed = JSON.parse(response);
+        const parsed = 'parse'
         console.log("✅ Parsed response:", parsed);
         return parsed;
       } catch (parseError) {
@@ -51,21 +48,21 @@ Your task:
       console.log("❌ Error in Agent.run():", error.message);
       throw error;
     }
+
   }
 }
 
 export async function nodeAgent(
   node: FlowNode,
   query: string,
-  availableTools: AvailableTools[]
+  executingFlow : IExecutingBotFlow
 ): Promise<string | number> {
   console.log("🚀 nodeAgent function called");
-  console.log("Node display name:", node.displayAgentName);
   console.log("Available functions:", node.availableFunctions);
 
   try {
-
-    const agent = new Agent(node, query, availableTools);
+  
+    const agent = new Agent(node, query,executingFlow);
     const result = await agent.run();
     return result;
   } catch (error) {

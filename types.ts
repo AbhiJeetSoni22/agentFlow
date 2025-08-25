@@ -1,31 +1,4 @@
-export interface IAgentFlow {
- 
-    agentName: string;
-    displayAgentName: string;
-    userAgentName: string;
-    output: number;
-    agentId?: string;
-    hardCodeFunction?: string | null;
-    agentPrompt: string;
-    userPrompt: string;
-    agentModel: string;
-    availableFunctions?: string[];
-    grabFunctionFrom?: string;
-    condition: {
-      conditionType: "OnAgentCompletion" | "OnAgentAnswer";
-      conditionValue?: string;
-      executeAgent?: string | null;
-      executeUserAgent?: string | null;
-      answerFromUserAgentName?: string | null;        // required if OnAgentAnswer
-      completionFromUserAgentName?: string | null;    // required if OnAgentCompletion
-    }[];
-  }[];
 
-// Condition interface
-export interface Condition {
-  isRunnable: boolean;
-  executeUserAgent: string;
-}
 export interface FlowNode {
   agentName: string;
   displayAgentName: string;
@@ -36,17 +9,50 @@ export interface FlowNode {
   hardCodeFunction?: string | null;
   grabFunctionFrom?: string | null;
   availableFunctions: string[];
-  condition: Condition[];
+  condition: any[];
   _id?: string;
 }
 
-export interface AvailableTools{
-  toolId :string;
-  toolName: string;
+interface ObjectId {
+  $oid: string;
 }
 
-export   interface Tools {
-  sum(): number;
-  division(): number;
-  multiply(): number;
+interface Parameter {
+  key: string;
+  validation: string;
+  _id: ObjectId;
+}
+
+interface Header {
+  key: string;
+  value: string;
+}
+
+interface DynamicParam {
+  key: string;
+  location: string;
+  required: boolean;
+  validation?: string;
+}
+
+interface ToolConfig {
+  apiName: string;
+  method: string;
+  baseUrl: string;
+  apiEndpoint: string;
+  headers: Header[];
+  dynamicParams: DynamicParam[];
+  tools: any[]; // यदि tools की structure पता हो तो specific type दें
+}
+
+export interface AvailableTool {
+  _id: ObjectId;
+  toolName: string;
+  toolDescription: string;
+  parameters: Parameter[];
+  companyId: string;
+  botId: string;
+  toolConfig: ToolConfig;
+  toolType: string;
+  __v: number;
 }

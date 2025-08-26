@@ -6,17 +6,14 @@ const ParameterSchema = new Schema({
   validation: { type: Schema.Types.Mixed },
 });
 
-// 🔹 Function Schema
-const FunctionSchema = new Schema({
-  funId: { type: String },
-  funName: { type: String },
-  parameters: { type: [ParameterSchema], required: true },
-  toolConfig: { type: Schema.Types.Mixed },
-});
+
 
 // 🔹 Available Functions Schema
 const AvailableFunctionSchema = new Schema({
-  function: { type: FunctionSchema, required: true },
+funId: { type: String },
+  funName: { type: String },
+  parameters: { type: [ParameterSchema], required: true },
+  toolConfig: { type: Schema.Types.Mixed }, 
 });
 
 // 🔹 Flow Schema

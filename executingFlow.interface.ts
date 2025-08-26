@@ -7,16 +7,14 @@ export interface IParameter {
 }
 
 // 🔹 2. Function Interface
-export interface IFunction {
-  funId?: string | null; // Allow null for optional string fields
-  funName?: string | null; // Allow null for optional string fields
-  parameters: IParameter[];
-  toolConfig?: any; // mongoose.Schema.Types.Mixed maps to any in TypeScript
-}
+
 
 // 🔹 3. Available Function Interface (nested within Flow)
 export interface IAvailableFunction {
-  function: IFunction;
+  funId?: string | null; // Allow null for optional string fields
+  funName?: string | null; // Allow null for optional string fields
+  parameters: IParameter[];
+  toolConfig?: any; 
 }
 
 // 🔹 4. Condition Interface (common to both BotFlow and ExecutingBotFlow)

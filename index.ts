@@ -4,7 +4,7 @@ import { nodeAgent } from "./nodeAgent";
 import dotenv from "dotenv";
 import { BotFlow } from "../src/models";
 
-
+import { AvailableTool } from "./types";
 import { ExecutingBotFlow } from "./executingFlow.schema";
 import { IExecutingBotFlow } from "./executingFlow.interface";
 /* hame tools ko fetch nahe karna hai flowId ke base per hamare pass botFlow collection me flow object ke andar, avalibale function ke andar uss tool ke id milige uss id ke base per hum uss tool ko Tools collection se fetch karenge or usko toolExecutor me bhej denge phir 
@@ -24,17 +24,17 @@ async function main(flowId: string, query: string) {
     if (flow.length === 0) {
       console.log("⚠️ No nodes found in flow");
       return;
-    } // Ab yahan hum ExecutingBotFlow document create karenge // 1. BotFlow ke data se naya object banate hain.
+    } // creating state for the  executng flow data res of the fields remain null 
 
     const executingFlowData = {
       flowName: flowObject?.flowName,
       flowDescription: flowObject?.flowDescription,
       companyId: flowObject?.companyId,
       botId: flowObject?.botId,
-      flowState: "start", // Initial state 'start' set kiya hai
+      flowState: "start", 
       flow: flowObject?.flow.map((node) => ({
         userAgentName: node.userAgentName,
-        condition: node.condition, // condition ko bhi copy kar liya
+        condition: node.condition, 
         availableFunctions: [
           {
             function: {
@@ -44,9 +44,9 @@ async function main(flowId: string, query: string) {
               toolConfig: null,
             },
           },
-        ], // yahan hum abhi empty array rakhenge, kyunki Tools collection se detailed data abhi fetch nahi kiya hai.
+        ],
       })),
-    }; // 2. Naya ExecutingBotFlow document database me save karte hain.
+    }; 
 
   
 const newExecutingFlow: IExecutingBotFlow = (await ExecutingBotFlow.create(executingFlowData)) as IExecutingBotFlow;

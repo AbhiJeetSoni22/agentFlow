@@ -4,6 +4,7 @@ import { Document } from "mongoose";
 export interface IParameter {
   key: string;
   validation?: any; // mongoose.Schema.Types.Mixed maps to any in TypeScript
+   value: any;
 }
 
 // 🔹 2. Function Interface

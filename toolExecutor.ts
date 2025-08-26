@@ -4,12 +4,14 @@ import { IExecutingBotFlow } from "./executingFlow.interface";
 import { ExecutingBotFlow } from "./executingFlow.schema";
 import { Tool } from "./tool.interface";
 import { FlowNode } from "./types";
-
+interface ToolAction{
+  
+}
 export class ToolExecutor {
   private availableTool: Tool | null;
   private executingFlowObject: IExecutingBotFlow |null;
   private node: FlowNode | null;
-
+  
   private constructor(tool: Tool, node: FlowNode) {
     console.log("ToolExecutor instance created and properties initialized.");
 

@@ -38,13 +38,13 @@ async function main(flowId: string, query: string) {
         condition: node.condition, 
         availableFunctions: [
           {
-            function: {
+           
               funId: node.availableFunctions?.[0],
               funName: node.availableFunctions?.[1],
               parameters: [null],
               toolConfig: null,
             },
-          },
+          
         ],
       })),
     }; 

@@ -4,6 +4,7 @@ import mongoose, { Schema } from "mongoose";
 const ParameterSchema = new Schema({
   key: { type: String, required: true },
   validation: { type: Schema.Types.Mixed },
+  value:{type:Schema.Types.Mixed, default:null}
 });
 
 

@@ -1,13 +1,9 @@
-// functionalAgent.ts
-
 import { IExecutingBotFlow } from "./executingFlow.interface";
 import { ExecutingBotFlow } from "./executingFlow.schema";
-import { LLMService } from "./llmService";
 import { Tool } from "./tool.interface";
 import { fetchAvailableTool } from "./tools";
-import { AvailableTool, FlowNode } from "./types"; // Assuming Tool is also defined or returned by fetchAvailableTool
-import { Document } from "mongoose";
-// Define a Tool interface for clarity, assuming fetchAvailableTool returns this structur
+import { FlowNode } from "./types"; 
+
 
 // Agent Class
 class Agent {

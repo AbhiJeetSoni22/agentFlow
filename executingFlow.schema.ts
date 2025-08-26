@@ -40,6 +40,7 @@ const ExecutingBotFlowSchema = new Schema({
   flowName: { type: String },
   flow: { type: [FlowSchema] },
   flowDescription: { type: String },
+  userQuery:{type:String ,required :true},
   companyId: { type: String, required: true },
   botId: { type: String, required: true },
   flowState: {

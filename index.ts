@@ -30,6 +30,7 @@ async function main(flowId: string, query: string) {
       flowName: flowObject?.flowName,
       flowDescription: flowObject?.flowDescription,
       companyId: flowObject?.companyId,
+      userQuery:query,
       botId: flowObject?.botId,
       flowState: "start", 
       flow: flowObject?.flow.map((node) => ({

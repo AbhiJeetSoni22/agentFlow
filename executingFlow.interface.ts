@@ -14,7 +14,7 @@ export interface IAvailableFunction {
   funId?: string | null; // Allow null for optional string fields
   funName?: string | null; // Allow null for optional string fields
   parameters: IParameter[];
-  toolConfig?: any; 
+  toolConfig?: any; //
 }
 
 // 🔹 4. Condition Interface (common to both BotFlow and ExecutingBotFlow)
@@ -39,6 +39,7 @@ export interface IExecutingBotFlow extends Document {
   flowName?: string | null; // Null को भी स्वीकारें
   flow?: IFlow[] | null; // Null को भी स्वीकारें
   flowDescription?: string | null; // Null को भी स्वीकारें
+  userQuery:string;
   companyId: string;
   botId: string;
   flowState?: "start" | "running" | "completed" | "abort";

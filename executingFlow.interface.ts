@@ -3,46 +3,57 @@ import { Document } from "mongoose";
 // 🔹 1. Parameter Interface
 export interface IParameter {
   key: string;
-  validation?: any; // mongoose.Schema.Types.Mixed maps to any in TypeScript
-   value: any;
+  value: any;
+  received: boolean;
 }
 
-// 🔹 2. Function Interface
+// 🔹 2. Function Parameters (inside variables array)
+export interface IFunctionParameter {
+  variableName?: string | null;
+  variableValue?: string | null;
+  received?: boolean;
+}
 
+// 🔹 3. Variable Interface (matches variables array in schema)
+export interface IVariable {
+  state?: boolean;
+  userAgentName?: string | null;
+  tool?: string | null;
+  functionParameters?: IFunctionParameter[] | null;
+}
 
-// 🔹 3. Available Function Interface (nested within Flow)
+// 🔹 4. Available Function Interface
 export interface IAvailableFunction {
-  funId?: string | null; // Allow null for optional string fields
-  funName?: string | null; // Allow null for optional string fields
-  parameters: IParameter[];
-  toolConfig?: any; //
+  funId?: string | null;
+  funName?: string | null;
 }
 
-// 🔹 4. Condition Interface (common to both BotFlow and ExecutingBotFlow)
+// 🔹 5. Condition Interface
 export interface ICondition {
-  conditionType?: "OnAgentCompletion" | "OnAgentAnswer" | "CUSTOM" | null; // Null को भी स्वीकारें
-  conditionValue?: string | null; // Allow null for optional string fields
+  conditionType?: "OnAgentCompletion" | "OnAgentAnswer" | "CUSTOM" | null;
+  conditionValue?: string | null;
   executeAgent?: string | null;
   executeUserAgent?: string | null;
   answerFromUserAgentName?: string | null;
   completionFromUserAgentName?: string | null;
 }
 
-// 🔹 5. Flow Interface (nested within ExecutingBotFlow)
+// 🔹 6. Flow Interface
 export interface IFlow {
   userAgentName: string;
-  condition?: ICondition[] | null; // Allow null for optional arrays
-  availableFunctions?: IAvailableFunction[] | null; // Allow null for optional arrays
+  condition?: ICondition[] | null;
+  availableFunctions?: IAvailableFunction[] | null;
 }
 
-// 🔹 6. Main Executing Bot Flow Interface
+// 🔹 7. Main Executing Bot Flow Interface
 export interface IExecutingBotFlow extends Document {
-  flowName?: string | null; // Null को भी स्वीकारें
-  flow?: IFlow[] | null; // Null को भी स्वीकारें
-  flowDescription?: string | null; // Null को भी स्वीकारें
-  userQuery:string;
+  flowName?: string | null;
+  flow?: IFlow[] | null;
+  flowDescription?: string | null;
+  userQuery: string;
+  userId: string;
   companyId: string;
   botId: string;
-  flowState?: "start" | "running" | "completed" | "abort";
+  flowState: "start" | "running" | "completed" | "abort";
+  variables?: IVariable[] | null;
 }
-

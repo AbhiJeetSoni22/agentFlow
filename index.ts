@@ -12,7 +12,7 @@ phir tool Executor botState banaye ga or query se parameters exract karke botSta
 */
 dotenv.config();
 // Run tests
-async function main(flowId: string, query: string) {
+async function main(flowId: string, query: string,userId:string) {
   try {
     const uri = process.env.DB_URI as string;
     if (!uri) {
@@ -31,6 +31,7 @@ async function main(flowId: string, query: string) {
       flowDescription: flowObject?.flowDescription,
       companyId: flowObject?.companyId,
       userQuery:query,
+      userId:userId,
       botId: flowObject?.botId,
       flowState: "start", 
       flow: flowObject?.flow.map((node) => ({
@@ -38,15 +39,13 @@ async function main(flowId: string, query: string) {
         condition: node.condition, 
         availableFunctions: [
           {
-           
               funId: node.availableFunctions?.[0],
               funName: node.availableFunctions?.[1],
-              parameters: [null],
-              toolConfig: null,
             },
-          
+        
         ],
       })),
+      variable:[]
     }; 
 
   
@@ -84,4 +83,4 @@ const newExecutingFlow: IExecutingBotFlow = (await ExecutingBotFlow.create(execu
   }
 }
 
-main("68a97ef9b953c4767e977052", "i want to sum 10 and 20");
+main("68a97ef9b953c4767e977052", "i want to sum 10 and 20",'dummyUserId');

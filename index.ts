@@ -12,7 +12,7 @@ phir tool Executor botState banaye ga or query se parameters exract karke botSta
 */
 dotenv.config();
 // Run tests
-async function main(flowId: string, query: string,userId:string) {
+async function main(flowId: string, query: string, userId: string) {
   try {
     const uri = process.env.DB_URI as string;
     if (!uri) {
@@ -24,37 +24,28 @@ async function main(flowId: string, query: string,userId:string) {
     if (flow.length === 0) {
       console.log("⚠️ No nodes found in flow");
       return;
-    } // creating state for the  executng flow data res of the fields remain null 
+    } // creating state for the  executng flow data res of the fields remain null
 
     const executingFlowData = {
       flowName: flowObject?.flowName,
       flowDescription: flowObject?.flowDescription,
       companyId: flowObject?.companyId,
-      userQuery:query,
-      userId:userId,
+      messages: [{ message: query, owner: "User" }],
+      userId: userId,
       botId: flowObject?.botId,
-      flowState: "start", 
-      flow: flowObject?.flow.map((node) => ({
-        userAgentName: node.userAgentName,
-        condition: node.condition, 
-        availableFunctions: [
-          {
-              funId: node.availableFunctions?.[0],
-              funName: node.availableFunctions?.[1],
-            },
-        
-        ],
-      })),
-      variable:[]
-    }; 
+      flowState: "start",
+      nodes: [],
+      variable: [],
+    };
 
-  
-const newExecutingFlow: IExecutingBotFlow = (await ExecutingBotFlow.create(executingFlowData)) as IExecutingBotFlow;
+    const newExecutingFlow: IExecutingBotFlow = (await ExecutingBotFlow.create(
+      executingFlowData
+    )) as unknown as IExecutingBotFlow;
     console.log("✅ ExecutingBotFlow document created successfully!");
     console.log("New document ID:", newExecutingFlow._id);
     let currentNode = flow[0];
     let nextNodeId: string | number;
-
+    
     nextNodeId = await nodeAgent(currentNode, query, newExecutingFlow);
     // while (true) {
     //   nextNodeId = nodeAgent(currentNode,query,availableTools);
@@ -83,4 +74,4 @@ const newExecutingFlow: IExecutingBotFlow = (await ExecutingBotFlow.create(execu
   }
 }
 
-main("68a97ef9b953c4767e977052", "i want to sum 10 and 20",'dummyUserId');
+main("68a97ef9b953c4767e977052", "i want to sum 10 and 20", "dummyUserId");

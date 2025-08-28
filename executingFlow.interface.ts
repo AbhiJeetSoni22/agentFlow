@@ -3,6 +3,7 @@ import { Document } from "mongoose";
 // 🔹 1. Parameter Interface
 export interface IParameter {
   key: string;
+  validation:any;
   value: any;
   received: boolean;
 }
@@ -39,18 +40,22 @@ export interface ICondition {
 }
 
 // 🔹 6. Flow Interface
-export interface IFlow {
+export interface INode{
   userAgentName: string;
   condition?: ICondition[] | null;
   availableFunctions?: IAvailableFunction[] | null;
+  nodeState:'Running'|'Completed'
 }
-
+export interface IMesssage{
+  message:string;
+  owner:"User"|"System";
+}
 // 🔹 7. Main Executing Bot Flow Interface
 export interface IExecutingBotFlow extends Document {
   flowName?: string | null;
-  flow?: IFlow[] | null;
+  nodes?: INode[] | null;
   flowDescription?: string | null;
-  userQuery: string;
+  messages:IMesssage[]|null;
   userId: string;
   companyId: string;
   botId: string;

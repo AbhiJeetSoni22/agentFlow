@@ -1,18 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-// 🔹 Parameters Schema
-const ParameterSchema = new Schema({
-  key: { type: String, required: true },
-   value: { type: Schema.Types.Mixed, default: null }, 
-   received: {type:Boolean, default:false}
-});
 
-const VariableSchema = new Schema({
-funId: { type: String },
-  funName: { type: String },
-  parameters: { type: [ParameterSchema], required: true },
-  funState: { type:String, enum:["Running","Completed"]}
-});
 
 // 🔹 Available Functions Schema
 const AvailableFunctionSchema = new Schema({
@@ -21,7 +9,7 @@ funId: { type: String },
 });
 
 // 🔹 Flow Schema
-const FlowSchema = new Schema({
+const NodeSchema = new Schema({
   userAgentName: { type: String, required: true },
   condition: [
         {
@@ -37,14 +25,22 @@ const FlowSchema = new Schema({
         },
       ],
   availableFunctions: { type: [AvailableFunctionSchema] },
+  nodeState:{
+    type:String,
+    enum:['Running','Completed'],
+    default:'Running'
+  }
 });
 
 // 🔹 Executing Bot Flow Schema
 const ExecutingBotFlowSchema = new Schema({
   flowName: { type: String },
-  flow: { type: [FlowSchema] },
+  nodes: { type: [NodeSchema] },
   flowDescription: { type: String },
-  userQuery:{type:String ,required :true},
+  messages:[{
+    message:{type:String},
+    owner:{type:String,enum:['User','System']}
+  }],
   userId:{type:String,required:true},
   companyId: { type: String, required: true },
   botId: { type: String, required: true },
@@ -60,12 +56,17 @@ const ExecutingBotFlowSchema = new Schema({
       functionParameters: [
         {
           variableName: { type: String },
+          validation:{type:Schema.Types.Mixed, required:true},
           variableValue: { type: String },
           received: { type: Boolean, default: false },
         }
       ]
     }
   ],
+    created: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 // Model

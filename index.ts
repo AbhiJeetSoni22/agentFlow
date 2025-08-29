@@ -16,7 +16,7 @@ async function main(flowId: string, query: string, userId: string) {
   try {
     const uri = process.env.DB_URI as string;
     if (!uri) {
-      console.log("uri not found first commt");
+      console.log("uri not found ");
     }
     await dbConnect(uri);
     const flowObject = await BotFlow.findById(flowId);

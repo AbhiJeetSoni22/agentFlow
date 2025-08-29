@@ -4,6 +4,7 @@ import { IExecutingBotFlow, IMesssage, INode } from "./executingFlow.interface";
 import { ExecutingBotFlow } from "./executingFlow.schema";
 import { LLMService } from "./llmService";
 import { Tool } from "./tool.interface";
+import { Tools } from "./tools";
 import { FlowNode } from "./types";
 
 // Define Message type if not already imported
@@ -104,14 +105,30 @@ export class ToolExecutor {
       );
 
       if (updatedBotFlow) {
-        this.executingFlowObject =
-          updatedBotFlow as unknown as IExecutingBotFlow;
-        const isReadyToExecute = updatedBotFlow.variables.some(
-          (variable: any) => variable.state === true
-        );
+        this.executingFlowObject =updatedBotFlow as unknown as IExecutingBotFlow;
+        let currentVariableIndex = updatedBotFlow.variables.length -1;
+        let currentVariableObject = updatedBotFlow.variables[currentVariableIndex]
+        let currentVariableToolName = currentVariableObject.tool
+        const isReadyToExecute = updatedBotFlow.variables[currentVariableIndex].state;
         if (isReadyToExecute) {
-          console.log("✅ Ready to execute function logic.");
+          console.log(" Ready to execute function logic with toolName.",currentVariableToolName);
+          //logic for executing tool like sum ,divide or multiply
+          let num1 = Number(currentVariableObject.functionParameters[0].variableValue)
+          let num2 = Number(currentVariableObject.functionParameters[1].variableValue)
+          if(currentVariableToolName==='Sum'){
+           const result= Tools.sum(num1,num2)
+           if(this.node?.condition.length! > 0){
+             
+           }
+          }
+          else if(currentVariableToolName==='Multiple'){
+            Tools.multiply(num1,num2)
+          }
+          else if(currentVariableToolName==='Division'){
+            Tools.division(num1,num2)
+          }
         }
+
       } else {
         console.error(" Failed to update ExecutingBotFlow document.");
       }
@@ -133,7 +150,8 @@ export class ToolExecutor {
           { _id: this.executingFlowObject?.id },
           {
             $push: { messages: messageObject },
-          }
+          },
+          {new:true}
         );
         this.history.push({ role: "assistant", content: userPrompt });
         return userPrompt;

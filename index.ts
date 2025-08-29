@@ -22,7 +22,7 @@ async function main(flowId: string, query: string, userId: string) {
     const flowObject = await BotFlow.findById(flowId);
     let flow: any[] = flowObject?.flow ?? [];
     if (flow.length === 0) {
-      console.log("⚠️ No nodes found in flow");
+      console.log(" No nodes found in flow");
       return;
     } // creating state for the  executng flow data res of the fields remain null
 

@@ -24,88 +24,104 @@ export class ToolExecutor {
     this.history = [];
   }
 
-  public async functionalAgent(query: string, executingFlowId: string) {
-    if (!this.availableTool) {
-      console.error("Error: Tool is not available.");
-      return;
-    }
 
-    try {
-      const llmService = new LLMService();
+  //functionalAgent function 
+public async functionalAgent(query: string, executingFlowId: string) {
+  if (!this.availableTool) {
+    console.error("Error: Tool is not available.");
+    return;
+  }
 
-      const prompt = `You are a helpful assistant that extracts function parameters from user queries.The user wants to call the following function: ${
-        this.availableTool.toolName
-      }
-     The required parameters for this function are: ${JSON.stringify(
-        this.availableTool.parameters
-      )}
-       Please extract the values for these parameters from the user's query and return a JSON object. Do not include any other text. Only return the JSON object.
-      Example: If the query is "I want to book a flight from Delhi to Mumbai" and the parameters are 
-      [{ "key": "source", "type": "string" }, { "key": "destination", "type": "string" }], the output should be:
-      { "source": "Delhi", "destination": "Mumbai" }`;
+  try {
+    const llmService = new LLMService();
 
-      this.history.push({ role: "user", content: query });
-
-      const parametersJsonString = await llmService.callGrok(
-        prompt,
-        this.history,
-        query
-      );
-
-       const extractedParameters = JSON.parse(parametersJsonString);
-    console.log("✅ Extracted Parameters from LLM:", extractedParameters);
-
-    // ✅ MongoDB se document fetch kiya ja raha hai latest entry ko update karne ke liye
     const botFlow = await ExecutingBotFlow.findById(executingFlowId);
-
     if (!botFlow || botFlow.variables.length === 0) {
-      console.log("❌ ExecutingBotFlow document ya variables nahi mile.");
+      console.log(" ExecutingBotFlow document ya variables nahi mile.");
       return;
     }
-
     const latestVariableEntry = botFlow.variables[botFlow.variables.length - 1];
-    
-    // `extractedParameters` se values lekar `latestVariableEntry` ko update karna
-    for (const [key, value] of Object.entries(extractedParameters)) {
-      const paramToUpdate = latestVariableEntry.functionParameters.find(
-        (p: any) => p.variableName === key
-      );
 
-      if (paramToUpdate) {
-        paramToUpdate.variableValue = value as string;
-        paramToUpdate.received = true;
-        console.log(`✅ Parameter '${key}' updated with value: '${value}'`);
+    const prompt = `You are a helpful assistant that fills in a function's parameters based on a user's query. Your task is to extract parameter values and return the updated parameter list in a JSON array.
+
+      Function Name: ${this.availableTool.toolName}
+      Required Parameters: ${JSON.stringify(this.availableTool.parameters)}
+      Current Parameters: ${JSON.stringify(latestVariableEntry.functionParameters)}
+
+      Instructions:
+      1. Identify and extract values for any parameter from the user's query.
+      2. Update the 'variableValue' of the corresponding parameter objects in the 'Current Parameters' list.
+      3. If a parameter's value is not found in the query, its 'variableValue' must remain 'null'. Do not invent values.
+      4. If a parameter already has a value, do not change it unless the user explicitly provides a new one.
+      5. Return ONLY the final, complete 'Current Parameters' array as a raw JSON object.
+      6. Do NOT include any extra text, code blocks, or explanations outside the JSON array.`;
+
+    this.history.push({ role: "user", content: query });
+
+    const parametersJsonString = await llmService.callGrok(
+      prompt,
+      this.history,
+      query
+    );
+
+    console.log(" AI response (raw JSON):", parametersJsonString);
+
+    const updatedFunctionParameters = JSON.parse(parametersJsonString);
+    latestVariableEntry.functionParameters = updatedFunctionParameters;
+
+    latestVariableEntry.functionParameters.forEach((param: any) => {
+      if (param.variableValue !== null && param.received === false) {
+        param.received = true;
+        console.log(`Parameter '${param.variableName}' updated with value: '${param.variableValue}'`);
       }
-    }
+    });
 
-    // ---
-    // ✅ Updated MongoDB query and update operation
+    const missingParams = latestVariableEntry.functionParameters.filter(
+      (param: any) => param.variableValue === null
+    );
+
+    //  Yahan par naya check lagaya gaya hai
+    if (missingParams.length === 0) {
+        latestVariableEntry.state = true; // state ko true kiya gaya hai
+        console.log("All parameters received. Variable state updated to true.");
+    }
+    
+    // Ab aage ka MongoDB update logic
     const updatedBotFlow = await ExecutingBotFlow.findOneAndUpdate(
       {
         _id: executingFlowId,
         "variables.userAgentName": latestVariableEntry.userAgentName,
-        "variables.tool": this.availableTool.toolName, // ✅ Ye condition add ki gayi hai
+        "variables.tool": this.availableTool.toolName,
       },
       {
         $set: { "variables.$": latestVariableEntry },
       },
       { new: true }
     );
-    // ---
 
     if (updatedBotFlow) {
       this.executingFlowObject = updatedBotFlow as unknown as IExecutingBotFlow;
-      console.log("✅ ExecutingBotFlow document updated successfully.");
+      console.log(" ExecutingBotFlow document updated successfully.");
     } else {
-      console.error("❌ Failed to update ExecutingBotFlow document.");
+      console.error(" Failed to update ExecutingBotFlow document.");
     }
 
-    this.history.push({ role: "assistant", content: parametersJsonString });
+    // Return logic
+    if (missingParams.length > 0) {
+      const missingNames = missingParams.map(param => param.variableName).join(', ');
+      const userPrompt = `Please provide the value for the following parameters: ${missingNames}.`;
+      console.log(` User will be prompted: "${userPrompt}"`);
+      this.history.push({ role: "assistant", content: userPrompt });
+      return userPrompt;
+    }
+
+    this.history.push({ role: "assistant", content: JSON.stringify(updatedFunctionParameters) });
+    return "Next Node or Result";
+    
   } catch (error) {
-    console.error("❌ Error in functionalAgent:", error);
+    console.error(" Error in functionalAgent:", error);
   }
 }
-
   // function where executingBotFlowState updated
   public async updateExecutingFlowDocument(
     executingFlowId: string,
@@ -157,9 +173,9 @@ export class ToolExecutor {
     if (updatedExecutingFlow) {
       this.executingFlowObject =
         updatedExecutingFlow as unknown as IExecutingBotFlow;
-      console.log("✅ New variable inserted into executing flow");
+      console.log(" New variable inserted into executing flow");
     } else {
-      console.error("❌ Failed to update executing flow: Document not found.");
+      console.error(" Failed to update executing flow: Document not found.");
     }
   }
 

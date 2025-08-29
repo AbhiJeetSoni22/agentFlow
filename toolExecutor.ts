@@ -25,6 +25,107 @@ export class ToolExecutor {
     this.history = [];
   }
 
+  // New private method to get the next node ID from the LLM
+  private async getNextNodeIdFromLLM(
+    result: number,
+    conditions: any[]
+  ): Promise<string> {
+    const llmService = new LLMService();
+    const prompt = `The result of the operation is ${result}.
+    Here are the available conditions: ${JSON.stringify(conditions)}.
+    Based on the result, which condition is met?
+    Return only the 'executeAgent' value of the satisfied condition.
+    For example, if the result is 30, and a condition says "result should be smaller than 50", you should return the corresponding 'executeAgent' ID.
+    Return only the ID, nothing else.`;
+
+    const llmResponse = await llmService.callGrok(
+      prompt,
+      this.history,
+      `Result: ${result}`
+    );
+    return llmResponse.trim();
+  }
+
+public async executeToolLogic() {
+  if (
+    this.executingFlowObject?.variables &&
+    this.executingFlowObject.variables.length > 0
+  ) {
+    let currentVariableIndex = this.executingFlowObject.variables.length - 1;
+    let currentVariableObject =
+      this.executingFlowObject.variables[currentVariableIndex];
+    let currentVariableToolName = currentVariableObject.tool;
+    console.log("now executing logic in executeToolLogic function");
+
+    let num1 = Number(
+      currentVariableObject?.functionParameters![0].variableValue
+    );
+    let num2 = Number(
+      currentVariableObject?.functionParameters![1].variableValue
+    );
+    let result: number;
+
+    if (currentVariableToolName === "Sum") {
+      result = Tools.sum(num1, num2);
+    } else if (currentVariableToolName === "Multiple") {
+      result = Tools.multiply(num1, num2);
+    } else if (currentVariableToolName === "Division") {
+      result = Tools.division(num1, num2);
+    } else {
+      console.error(`Unknown tool: ${currentVariableToolName}`);
+      return;
+    }
+
+    console.log(`Tool execution result: ${result}`);
+
+    if (this.node?.condition && this.node.condition.length > 0) {
+      console.log("Conditions found. Sending result and conditions to LLM.");
+      const nextNodeId = await this.getNextNodeIdFromLLM(
+        result,
+        this.node.condition
+      );
+      console.log(
+        `LLM decided to proceed to the next node with ID: ${nextNodeId}`
+      );
+
+      // LLM ke response ko message array mein save karna
+      const messageObject: IMesssage = {
+        message: `LLM's decision: Proceed to node with ID ${nextNodeId} based on result ${result}.`,
+        owner: "System",
+      };
+
+      await ExecutingBotFlow.findOneAndUpdate(
+        { _id: this.executingFlowObject?.id },
+        {
+          $push: { messages: messageObject },
+        },
+        { new: true }
+      );
+
+      return { nextNodeId };
+    } else {
+      // Jab koi condition nahi hai, tab result ko message array mein save karna
+      console.log("No conditions found. Saving the result to messages.");
+
+      const messageObject: IMesssage = {
+        message: `The final result of the operation is: ${result}`,
+        owner: "System",
+      };
+
+      await ExecutingBotFlow.findOneAndUpdate(
+        { _id: this.executingFlowObject?.id },
+        {
+          $push: { messages: messageObject },
+        },
+        { new: true }
+      );
+      
+      return { result };
+    }
+  }
+  return null;
+}
+
   //functionalAgent function
   public async functionalAgent(query: string, executingFlowId: string) {
     if (!this.availableTool) {
@@ -45,19 +146,19 @@ export class ToolExecutor {
 
       const prompt = `You are a helpful assistant that fills in a function's parameters based on a user's query. Your task is to extract parameter values and return the updated parameter list in a JSON array.
 
-      Function Name: ${this.availableTool.toolName}
-      Required Parameters: ${JSON.stringify(this.availableTool.parameters)}
-      Current Parameters: ${JSON.stringify(
+      Function Name: ${this.availableTool.toolName}
+      Required Parameters: ${JSON.stringify(this.availableTool.parameters)}
+      Current Parameters: ${JSON.stringify(
         latestVariableEntry.functionParameters
       )}
 
-      Instructions:
-      1. Identify and extract values for any parameter from the user's query.
-      2. Update the 'variableValue' of the corresponding parameter objects in the 'Current Parameters' list.
-      3. If a parameter's value is not found in the query, its 'variableValue' must remain 'null'. Do not invent values.
-      4. If a parameter already has a value, do not change it unless the user explicitly provides a new one.
-      5. Return ONLY the final, complete 'Current Parameters' array as a raw JSON object.
-      6. Do NOT include any extra text, code blocks, or explanations outside the JSON array.`;
+      Instructions:
+      1. Identify and extract values for any parameter from the user's query.
+      2. Update the 'variableValue' of the corresponding parameter objects in the 'Current Parameters' list.
+      3. If a parameter's value is not found in the query, its 'variableValue' must remain 'null'. Do not invent values.
+      4. If a parameter already has a value, do not change it unless the user explicitly provides a new one.
+      5. Return ONLY the final, complete 'Current Parameters' array as a raw JSON object.
+      6. Do NOT include any extra text, code blocks, or explanations outside the JSON array.`;
 
       this.history.push({ role: "user", content: query });
 
@@ -85,13 +186,11 @@ export class ToolExecutor {
         (param: any) => param.variableValue === null
       );
 
-      //  Yahan par naya check lagaya gaya hai
       if (missingParams.length === 0) {
-        latestVariableEntry.state = true; // state ko true kiya gaya hai
+        latestVariableEntry.state = true;
         console.log("All parameters received. Variable state updated to true.");
       }
 
-      // Ab aage ka MongoDB update logic
       const updatedBotFlow = await ExecutingBotFlow.findOneAndUpdate(
         {
           _id: executingFlowId,
@@ -105,30 +204,26 @@ export class ToolExecutor {
       );
 
       if (updatedBotFlow) {
-        this.executingFlowObject =updatedBotFlow as unknown as IExecutingBotFlow;
-        let currentVariableIndex = updatedBotFlow.variables.length -1;
-        let currentVariableObject = updatedBotFlow.variables[currentVariableIndex]
-        let currentVariableToolName = currentVariableObject.tool
-        const isReadyToExecute = updatedBotFlow.variables[currentVariableIndex].state;
+        this.executingFlowObject =
+          updatedBotFlow as unknown as IExecutingBotFlow;
+        let currentVariableIndex = updatedBotFlow.variables.length - 1;
+        const isReadyToExecute =
+          updatedBotFlow.variables[currentVariableIndex].state;
         if (isReadyToExecute) {
-          console.log(" Ready to execute function logic with toolName.",currentVariableToolName);
-          //logic for executing tool like sum ,divide or multiply
-          let num1 = Number(currentVariableObject.functionParameters[0].variableValue)
-          let num2 = Number(currentVariableObject.functionParameters[1].variableValue)
-          if(currentVariableToolName==='Sum'){
-           const result= Tools.sum(num1,num2)
-           if(this.node?.condition.length! > 0){
-             
-           }
-          }
-          else if(currentVariableToolName==='Multiple'){
-            Tools.multiply(num1,num2)
-          }
-          else if(currentVariableToolName==='Division'){
-            Tools.division(num1,num2)
+          console.log(" Ready to execute function logic with toolName.");
+          const executionResult = await this.executeToolLogic();
+          if (executionResult?.nextNodeId) {
+            console.log(
+              `Flow will continue to the next node with ID: ${executionResult.nextNodeId}`
+            );
+            // Here you would add the logic to proceed to the next node
+            return executionResult.nextNodeId;
+          } else if (executionResult?.result !== undefined) {
+            console.log(`Final result: ${executionResult.result}`);
+            // Here you would add the logic to handle the final result
+            return executionResult.result;
           }
         }
-
       } else {
         console.error(" Failed to update ExecutingBotFlow document.");
       }
@@ -141,7 +236,6 @@ export class ToolExecutor {
         const userPrompt = `Please provide the value for the following parameters: ${missingNames}.`;
         console.log(` User will be prompted: "${userPrompt}"`);
 
-        //adding query to the botflow messages array
         const messageObject: IMesssage = {
           message: userPrompt,
           owner: "System",
@@ -151,7 +245,7 @@ export class ToolExecutor {
           {
             $push: { messages: messageObject },
           },
-          {new:true}
+          { new: true }
         );
         this.history.push({ role: "assistant", content: userPrompt });
         return userPrompt;
@@ -166,6 +260,7 @@ export class ToolExecutor {
       console.error(" Error in functionalAgent:", error);
     }
   }
+
   // function where executingBotFlowState updated
   public async updateExecutingFlowDocument(
     executingFlowId: string,
@@ -177,7 +272,6 @@ export class ToolExecutor {
       );
       return;
     }
-    //current node for executingbotflow
     const currentNode: INode = {
       userAgentName: this.node.userAgentName,
       condition: this.node?.condition,
@@ -189,7 +283,6 @@ export class ToolExecutor {
       ],
       nodeState: "Running",
     };
-    // functionParameters map karna
     const functionParameters =
       tool.parameters?.map((p: any) => ({
         variableName: p.key,
@@ -208,8 +301,8 @@ export class ToolExecutor {
     const updatedExecutingFlow = await ExecutingBotFlow.findOneAndUpdate(
       { _id: executingFlowId },
       {
-        $push: { nodes: currentNode, variables: newVariableEntry }, // 👈 naya entry insert
-        $set: { flowState: "running" }, // flow ka state update
+        $push: { nodes: currentNode, variables: newVariableEntry },
+        $set: { flowState: "running" },
       },
       { new: true }
     );
@@ -223,9 +316,7 @@ export class ToolExecutor {
     }
   }
 
-  // Actual execution logic ab ek private method mein hai
   private async updateBotFlowState(executingFlowId: string): Promise<void> {
-    // Null check ke baad update method ko call kiya
     if (this.availableTool) {
       await this.updateExecutingFlowDocument(
         executingFlowId,
@@ -239,12 +330,12 @@ export class ToolExecutor {
     executingFlowId: string,
     query: string,
     node: FlowNode
-  ): Promise<string | number> {
+  ): Promise<string | number | undefined> {
     const executor = new ToolExecutor(tool, node);
 
     await executor.updateBotFlowState(executingFlowId);
 
-    await executor.functionalAgent(query, executingFlowId);
-    return "nextnode or result";
+    const result = await executor.functionalAgent(query, executingFlowId);
+    return result;
   }
 }

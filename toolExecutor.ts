@@ -1,5 +1,3 @@
-// toolExecutor.ts
-
 import { IExecutingBotFlow, IMesssage, INode } from "./executingFlow.interface";
 import { ExecutingBotFlow } from "./executingFlow.schema";
 import { LLMService } from "./llmService";
@@ -262,10 +260,7 @@ public async executeToolLogic() {
   }
 
   // function where executingBotFlowState updated
-  public async updateExecutingFlowDocument(
-    executingFlowId: string,
-    tool: Tool
-  ) {
+  public async updateExecutingFlowDocument(executingFlowId: string,tool: Tool) {
     if (!this.node) {
       console.error(
         "Error: node is not set before calling updateExecutingFlowDocument."

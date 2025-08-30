@@ -1,8 +1,4 @@
-// functionalAgent.ts
-
-
 import { IExecutingBotFlow } from "./executingFlow.interface";
-
 import { ToolExecutor } from "./toolExecutor";
 import { fetchAvailableTool } from "./tools";
 import {  FlowNode } from "./types";
@@ -12,9 +8,7 @@ class Agent {
   private node: FlowNode;
   private query: string;
   private executingFlow: IExecutingBotFlow;
-  // private availableTool: AvailableTools;
 
-  // Constructor now expects parameters to be provided
   constructor(node: FlowNode, query: string, executingFlow:IExecutingBotFlow) {
     this.node = node;
     this.query = query;
@@ -27,7 +21,7 @@ class Agent {
     try {
       // tool id is always at the first index of the availableFunction array
       const toolId= this.node.availableFunctions[0];
-// fetching tool as per toolId using function.
+      // fetching tool as per toolId using function.
       const tool = await fetchAvailableTool(toolId)
   
       const executingFlowId = this.executingFlow.id;

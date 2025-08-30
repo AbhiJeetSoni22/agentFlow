@@ -28,14 +28,10 @@ class Agent {
    
     const result = await ToolExecutor.executeTools(tool, executingFlowId, this.query, this.node);
      
-      try {
-        const parsed = 'parse'
-        console.log("✅ Parsed response:", parsed);
-        return parsed;
-      } catch (parseError) {
-        console.log("❌ JSON parse error:", parseError);
-        return 'Tool not Found';
-      }
+    if (result === undefined) {
+      throw new Error("ToolExecutor.executeTools returned undefined");
+    }
+    return result;
     } catch (error: any) {
       console.log("❌ Error in Agent.run():", error.message);
       throw error;

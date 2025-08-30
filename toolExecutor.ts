@@ -21,20 +21,19 @@ export class ToolExecutor {
     this.node = node;
     this.executingFlowObject = null;
     this.history = [];
-  }
+  } // New private method to get the next node ID from the LLM
 
-  // New private method to get the next node ID from the LLM
   private async getNextNodeIdFromLLM(
     result: number,
     conditions: any[]
   ): Promise<string> {
     const llmService = new LLMService();
     const prompt = `The result of the operation is ${result}.
-    Here are the available conditions: ${JSON.stringify(conditions)}.
-    Based on the result, which condition is met?
-    Return only the 'executeAgent' value of the satisfied condition.
-    For example, if the result is 30, and a condition says "result should be smaller than 50", you should return the corresponding 'executeAgent' ID.
-    Return only the ID, nothing else.`;
+    Here are the available conditions: ${JSON.stringify(conditions)}.
+    Based on the result, which condition is met?
+    Return only the 'executeAgent' value of the satisfied condition.
+    For example, if the result is 30, and a condition says "result should be smaller than 50", you should return the corresponding 'executeAgent' ID.
+    Return only the ID, nothing else.`;
 
     const llmResponse = await llmService.callGrok(
       prompt,
@@ -44,87 +43,84 @@ export class ToolExecutor {
     return llmResponse.trim();
   }
 
-public async executeToolLogic() {
-  if (
-    this.executingFlowObject?.variables &&
-    this.executingFlowObject.variables.length > 0
-  ) {
-    let currentVariableIndex = this.executingFlowObject.variables.length - 1;
-    let currentVariableObject =
-      this.executingFlowObject.variables[currentVariableIndex];
-    let currentVariableToolName = currentVariableObject.tool;
-    console.log("now executing logic in executeToolLogic function");
+  public async executeToolLogic() {
+    if (
+      this.executingFlowObject?.variables &&
+      this.executingFlowObject.variables.length > 0
+    ) {
+      let currentVariableIndex = this.executingFlowObject.variables.length - 1;
+      let currentVariableObject =
+        this.executingFlowObject.variables[currentVariableIndex];
+      let currentVariableToolName = currentVariableObject.tool;
+      console.log("now executing logic in executeToolLogic function");
 
-    let num1 = Number(
-      currentVariableObject?.functionParameters![0].variableValue
-    );
-    let num2 = Number(
-      currentVariableObject?.functionParameters![1].variableValue
-    );
-    let result: number;
+      let num1 = Number(
+        currentVariableObject?.functionParameters![0].variableValue
+      );
+      let num2 = Number(
+        currentVariableObject?.functionParameters![1].variableValue
+      );
+      let result: number;
 
-    if (currentVariableToolName === "Sum") {
-      result = Tools.sum(num1, num2);
-    } else if (currentVariableToolName === "Multiple") {
-      result = Tools.multiply(num1, num2);
-    } else if (currentVariableToolName === "Division") {
-      result = Tools.division(num1, num2);
-    } else {
-      console.error(`Unknown tool: ${currentVariableToolName}`);
-      return;
+      if (currentVariableToolName === "Sum") {
+        result = Tools.sum(num1, num2);
+      } else if (currentVariableToolName === "Multiple") {
+        result = Tools.multiply(num1, num2);
+      } else if (currentVariableToolName === "Division") {
+        result = Tools.division(num1, num2);
+      } else {
+        console.error(`Unknown tool: ${currentVariableToolName}`);
+        return;
+      }
+
+      console.log(`Tool execution result: ${result}`);
+
+      if (this.node?.condition && this.node.condition.length > 0) {
+        console.log("Conditions found. Sending result and conditions to LLM.");
+        const nextNodeId = await this.getNextNodeIdFromLLM(
+          result,
+          this.node.condition
+        );
+        console.log(
+          `LLM decided to proceed to the next node with ID: ${nextNodeId}`
+        ); // LLM ke response ko message array mein save karna
+
+        const messageObject: IMesssage = {
+          message: `LLM's decision: Proceed to node with ID ${nextNodeId} based on result ${result}.`,
+          owner: "System",
+        };
+
+        await ExecutingBotFlow.findOneAndUpdate(
+          { _id: this.executingFlowObject?.id },
+          {
+            $push: { messages: messageObject },
+          },
+          { new: true }
+        );
+
+        return { nextNodeId };
+      } else {
+        // Jab koi condition nahi hai, tab result ko message array mein save karna
+        console.log("No conditions found. Saving the result to messages.");
+
+        const messageObject: IMesssage = {
+          message: `The final result of the operation is: ${result}`,
+          owner: "System",
+        };
+
+        await ExecutingBotFlow.findOneAndUpdate(
+          { _id: this.executingFlowObject?.id },
+          {
+            $push: { messages: messageObject },
+          },
+          { new: true }
+        );
+        return { result };
+      }
     }
+    return null;
+  } //functionalAgent function
 
-    console.log(`Tool execution result: ${result}`);
-
-    if (this.node?.condition && this.node.condition.length > 0) {
-      console.log("Conditions found. Sending result and conditions to LLM.");
-      const nextNodeId = await this.getNextNodeIdFromLLM(
-        result,
-        this.node.condition
-      );
-      console.log(
-        `LLM decided to proceed to the next node with ID: ${nextNodeId}`
-      );
-
-      // LLM ke response ko message array mein save karna
-      const messageObject: IMesssage = {
-        message: `LLM's decision: Proceed to node with ID ${nextNodeId} based on result ${result}.`,
-        owner: "System",
-      };
-
-      await ExecutingBotFlow.findOneAndUpdate(
-        { _id: this.executingFlowObject?.id },
-        {
-          $push: { messages: messageObject },
-        },
-        { new: true }
-      );
-
-      return { nextNodeId };
-    } else {
-      // Jab koi condition nahi hai, tab result ko message array mein save karna
-      console.log("No conditions found. Saving the result to messages.");
-
-      const messageObject: IMesssage = {
-        message: `The final result of the operation is: ${result}`,
-        owner: "System",
-      };
-
-      await ExecutingBotFlow.findOneAndUpdate(
-        { _id: this.executingFlowObject?.id },
-        {
-          $push: { messages: messageObject },
-        },
-        { new: true }
-      );
-      
-      return { result };
-    }
-  }
-  return null;
-}
-
-  //functionalAgent function
   public async functionalAgent(query: string, executingFlowId: string) {
     if (!this.availableTool) {
       console.error("Error: Tool is not available.");
@@ -213,20 +209,17 @@ public async executeToolLogic() {
           if (executionResult?.nextNodeId) {
             console.log(
               `Flow will continue to the next node with ID: ${executionResult.nextNodeId}`
-            );
-            // Here you would add the logic to proceed to the next node
+            ); // Here you would add the logic to proceed to the next node
             return executionResult.nextNodeId;
           } else if (executionResult?.result !== undefined) {
-            console.log(`Final result: ${executionResult.result}`);
-            // Here you would add the logic to handle the final result
-            return executionResult.result;
+            console.log(`Final result: ${executionResult.result}`); // Here you would add the logic to handle the final result
+            return Number(executionResult.result);
           }
         }
       } else {
         console.error(" Failed to update ExecutingBotFlow document.");
-      }
+      } // Return logic
 
-      // Return logic
       if (missingParams.length > 0) {
         const missingNames = missingParams
           .map((param) => param.variableName)
@@ -246,7 +239,7 @@ public async executeToolLogic() {
           { new: true }
         );
         this.history.push({ role: "assistant", content: userPrompt });
-        return userPrompt;
+        return "PROMPT_REQUIRED";
       }
 
       this.history.push({
@@ -257,10 +250,12 @@ public async executeToolLogic() {
     } catch (error) {
       console.error(" Error in functionalAgent:", error);
     }
-  }
+  } // function where executingBotFlowState updated
 
-  // function where executingBotFlowState updated
-  public async updateExecutingFlowDocument(executingFlowId: string,tool: Tool) {
+  public async updateExecutingFlowDocument(
+    executingFlowId: string,
+    tool: Tool
+  ) {
     if (!this.node) {
       console.error(
         "Error: node is not set before calling updateExecutingFlowDocument."
@@ -331,6 +326,7 @@ public async executeToolLogic() {
     await executor.updateBotFlowState(executingFlowId);
 
     const result = await executor.functionalAgent(query, executingFlowId);
+
     return result;
   }
 }

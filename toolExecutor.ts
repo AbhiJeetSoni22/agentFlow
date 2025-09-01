@@ -21,8 +21,7 @@ export class ToolExecutor {
     this.node = node;
     this.executingFlowObject = null;
     this.history = [];
-  } // New private method to get the next node ID from the LLM
-
+  } // LLM se next node ID lene ke liye private method
   private async getNextNodeIdFromLLM(
     result: number,
     conditions: any[]
@@ -52,7 +51,7 @@ export class ToolExecutor {
       let currentVariableObject =
         this.executingFlowObject.variables[currentVariableIndex];
       let currentVariableToolName = currentVariableObject.tool;
-      console.log("now executing logic in executeToolLogic function");
+
 
       let num1 = Number(
         currentVariableObject?.functionParameters![0].variableValue
@@ -73,7 +72,23 @@ export class ToolExecutor {
         return;
       }
 
-      console.log(`Tool execution result: ${result}`);
+    console.log(`Tool execution result: ${result}`);
+
+      // Update the state of the current node to "Completed"
+      await ExecutingBotFlow.findOneAndUpdate(
+        { _id: this.executingFlowObject?.id },
+        {
+          $set: {
+            "nodes.$[elem].nodeState": "Completed",
+          },
+        },
+        {
+          new: true,
+          arrayFilters: [ { "elem.userAgentName": this.node?.userAgentName } ]
+        }
+      );
+      console.log(`Node '${this.node?.userAgentName}' state updated to 'Completed'.`);
+
 
       if (this.node?.condition && this.node.condition.length > 0) {
         console.log("Conditions found. Sending result and conditions to LLM.");
@@ -83,7 +98,7 @@ export class ToolExecutor {
         );
         console.log(
           `LLM decided to proceed to the next node with ID: ${nextNodeId}`
-        ); // LLM ke response ko message array mein save karna
+        );
 
         const messageObject: IMesssage = {
           message: `LLM's decision: Proceed to node with ID ${nextNodeId} based on result ${result}.`,
@@ -131,21 +146,57 @@ export class ToolExecutor {
       const llmService = new LLMService();
 
       const botFlow = await ExecutingBotFlow.findById(executingFlowId);
-      if (!botFlow || botFlow.variables.length === 0) {
-        console.log(" ExecutingBotFlow document ya variables nahi mile.");
+      if (!botFlow) {
+        console.log(" ExecutingBotFlow document not found.");
         return;
-      }
-      const latestVariableEntry =
-        botFlow.variables[botFlow.variables.length - 1];
+      } // Latest variable entry ko find karna
+      let latestVariableEntry =
+        botFlow.variables.length > 0
+          ? botFlow.variables[botFlow.variables.length - 1]
+          : null; // Agar latest variable entry nahi hai ya uski state true hai, to naya entry banayein
 
+      if (!latestVariableEntry || latestVariableEntry.state === true) {
+        console.log(
+          "Creating new variable entry because  previous was completed."
+        );
+        const functionParameters =
+          this.availableTool.parameters?.map((p: any) => ({
+            variableName: p.key,
+            validation: p.validation,
+            variableValue: p.value ?? null,
+            received: p.received ?? false,
+          })) || [];
+
+        const newVariableEntry = {
+          state: false,
+          userAgentName: this.node?.userAgentName,
+          tool: this.availableTool.toolName,
+          functionParameters,
+        };
+
+        await ExecutingBotFlow.findOneAndUpdate(
+          { _id: executingFlowId },
+          { $push: { variables: newVariableEntry } },
+          { new: true }
+        );
+        this.executingFlowObject = (await ExecutingBotFlow.findById(
+          executingFlowId
+        )) as unknown as IExecutingBotFlow;
+        latestVariableEntry = this.executingFlowObject?.variables
+          ? (this.executingFlowObject.variables[
+              this.executingFlowObject.variables.length - 1
+            ] as any)
+          : null;
+      } // LLM ko updated query ke saath call karna
+      this.history.push({ role: "user", content: query });
       const prompt = `You are a helpful assistant that fills in a function's parameters based on a user's query. Your task is to extract parameter values and return the updated parameter list in a JSON array.
 
       Function Name: ${this.availableTool.toolName}
       Required Parameters: ${JSON.stringify(this.availableTool.parameters)}
       Current Parameters: ${JSON.stringify(
-        latestVariableEntry.functionParameters
+        latestVariableEntry?.functionParameters || []
       )}
-
+      
       Instructions:
       1. Identify and extract values for any parameter from the user's query.
       2. Update the 'variableValue' of the corresponding parameter objects in the 'Current Parameters' list.
@@ -154,99 +205,90 @@ export class ToolExecutor {
       5. Return ONLY the final, complete 'Current Parameters' array as a raw JSON object.
       6. Do NOT include any extra text, code blocks, or explanations outside the JSON array.`;
 
-      this.history.push({ role: "user", content: query });
-
       const parametersJsonString = await llmService.callGrok(
         prompt,
         this.history,
         query
       );
 
-      console.log(" AI response (raw JSON):", parametersJsonString);
 
-      const updatedFunctionParameters = JSON.parse(parametersJsonString);
-      latestVariableEntry.functionParameters = updatedFunctionParameters;
-
-      latestVariableEntry.functionParameters.forEach((param: any) => {
-        if (param.variableValue !== null && param.received === false) {
-          param.received = true;
-          console.log(
-            `Parameter '${param.variableName}' updated with value: '${param.variableValue}'`
-          );
-        }
-      });
-
-      const missingParams = latestVariableEntry.functionParameters.filter(
-        (param: any) => param.variableValue === null
-      );
-
-      if (missingParams.length === 0) {
-        latestVariableEntry.state = true;
-        console.log("All parameters received. Variable state updated to true.");
-      }
-
+      const updatedFunctionParameters = JSON.parse(parametersJsonString); // Update the specific variable entry in the database
       const updatedBotFlow = await ExecutingBotFlow.findOneAndUpdate(
         {
           _id: executingFlowId,
-          "variables.userAgentName": latestVariableEntry.userAgentName,
-          "variables.tool": this.availableTool.toolName,
+          "variables.userAgentName": latestVariableEntry?.userAgentName,
         },
         {
-          $set: { "variables.$": latestVariableEntry },
+          $set: {
+            "variables.$[elem].functionParameters": updatedFunctionParameters,
+          },
         },
-        { new: true }
+        {
+          new: true,
+          arrayFilters: [{ "elem.userAgentName": this.node?.userAgentName }],
+        }
       );
 
       if (updatedBotFlow) {
         this.executingFlowObject =
           updatedBotFlow as unknown as IExecutingBotFlow;
-        let currentVariableIndex = updatedBotFlow.variables.length - 1;
+        const currentVariableIndex = updatedBotFlow.variables.length - 1;
         const isReadyToExecute =
           updatedBotFlow.variables[currentVariableIndex].state;
-        if (isReadyToExecute) {
-          console.log(" Ready to execute function logic with toolName.");
+        const missingParams = updatedFunctionParameters.filter(
+          (param: any) => param.variableValue === null
+        );
+
+        if (missingParams.length === 0) {
+          // Ab state ko update karein jab saare parameters mil jaayen
+          await ExecutingBotFlow.findOneAndUpdate(
+            {
+              _id: executingFlowId,
+              "variables.userAgentName": this.node?.userAgentName,
+            },
+            { $set: { "variables.$[elem].state": true } },
+            {
+              new: true,
+              arrayFilters: [
+                { "elem.userAgentName": this.node?.userAgentName },
+              ],
+            }
+          );
+          console.log(
+            "All parameters received. Variable state updated to true."
+          ); // Execute the tool logic and return the result
+
           const executionResult = await this.executeToolLogic();
           if (executionResult?.nextNodeId) {
-            console.log(
-              `Flow will continue to the next node with ID: ${executionResult.nextNodeId}`
-            ); // Here you would add the logic to proceed to the next node
             return executionResult.nextNodeId;
           } else if (executionResult?.result !== undefined) {
-            console.log(`Final result: ${executionResult.result}`); // Here you would add the logic to handle the final result
             return Number(executionResult.result);
           }
+        } else {
+          const missingNames = missingParams
+            .map((param: any) => param.variableName)
+            .join(", ");
+          const userPrompt = `For the '${this.availableTool?.toolName}' tool, please provide the value for the following parameters: ${missingNames}.`;
+
+          const messageObject: IMesssage = {
+            message: userPrompt,
+            owner: "System",
+          };
+          await ExecutingBotFlow.findOneAndUpdate(
+            { _id: this.executingFlowObject?.id },
+            { $push: { messages: messageObject } },
+            { new: true }
+          );
+          this.history.push({ role: "assistant", content: userPrompt });
+          return "PROMPT_REQUIRED";
         }
       } else {
         console.error(" Failed to update ExecutingBotFlow document.");
-      } // Return logic
-
-      if (missingParams.length > 0) {
-        const missingNames = missingParams
-          .map((param) => param.variableName)
-          .join(", ");
-        const userPrompt = `Please provide the value for the following parameters: ${missingNames}.`;
-        console.log(` User will be prompted: "${userPrompt}"`);
-
-        const messageObject: IMesssage = {
-          message: userPrompt,
-          owner: "System",
-        };
-        await ExecutingBotFlow.findOneAndUpdate(
-          { _id: this.executingFlowObject?.id },
-          {
-            $push: { messages: messageObject },
-          },
-          { new: true }
-        );
-        this.history.push({ role: "assistant", content: userPrompt });
-        return "PROMPT_REQUIRED";
       }
-
       this.history.push({
         role: "assistant",
         content: JSON.stringify(updatedFunctionParameters),
       });
-      return "Next Node or Result";
     } catch (error) {
       console.error(" Error in functionalAgent:", error);
     }
@@ -261,46 +303,67 @@ export class ToolExecutor {
         "Error: node is not set before calling updateExecutingFlowDocument."
       );
       return;
-    }
-    const currentNode: INode = {
-      userAgentName: this.node.userAgentName,
-      condition: this.node?.condition,
-      availableFunctions: [
-        {
-          funId: this.node.availableFunctions[0],
-          funName: this.node.availableFunctions[1],
-        },
-      ],
-      nodeState: "Running",
-    };
-    const functionParameters =
-      tool.parameters?.map((p: any) => ({
-        variableName: p.key,
-        validation: p.validation,
-        variableValue: p.value ?? null,
-        received: p.received ?? false,
-      })) || [];
+    } // Check if the node entry already exists
 
-    const newVariableEntry = {
-      state: false,
-      userAgentName: this.node.userAgentName,
-      tool: tool.toolName,
-      functionParameters,
-    };
+    const existingFlow = await ExecutingBotFlow.findById(executingFlowId);
+    const nodeExists = existingFlow?.nodes?.some(
+      (node) => node.userAgentName === this.node?.userAgentName
+    );
+
+    const update: any = { $set: { flowState: "running" } };
+
+    if (!nodeExists) {
+      const currentNode: INode = {
+        userAgentName: this.node.userAgentName,
+        condition: this.node?.condition,
+        availableFunctions: [
+          {
+            funId: this.node.availableFunctions[0],
+            funName: this.node.availableFunctions[1],
+          },
+        ],
+        nodeState: "Running",
+      };
+      update.$push = { nodes: currentNode };
+    } // Check if the variable entry already exists
+
+    const variableExists = existingFlow?.variables?.some(
+      (v) => v.userAgentName === this.node?.userAgentName
+    );
+
+    if (!variableExists) {
+      const functionParameters =
+        tool.parameters?.map((p: any) => ({
+          variableName: p.key,
+          validation: p.validation,
+          variableValue: p.value ?? null,
+          received: p.received ?? false,
+        })) || [];
+
+      const newVariableEntry = {
+        state: false,
+        userAgentName: this.node.userAgentName,
+        tool: tool.toolName,
+        functionParameters,
+      };
+
+      if (update.$push) {
+        update.$push.variables = newVariableEntry;
+      } else {
+        update.$push = { variables: newVariableEntry };
+      }
+    }
 
     const updatedExecutingFlow = await ExecutingBotFlow.findOneAndUpdate(
       { _id: executingFlowId },
-      {
-        $push: { nodes: currentNode, variables: newVariableEntry },
-        $set: { flowState: "running" },
-      },
+      update,
       { new: true }
     );
 
     if (updatedExecutingFlow) {
       this.executingFlowObject =
         updatedExecutingFlow as unknown as IExecutingBotFlow;
-      console.log(" New variable inserted into executing flow");
+      console.log(" Executing flow document updated successfully.");
     } else {
       console.error(" Failed to update executing flow: Document not found.");
     }

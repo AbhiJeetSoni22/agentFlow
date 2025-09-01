@@ -1,7 +1,7 @@
 import { IExecutingBotFlow } from "./executingFlow.interface";
 import { ToolExecutor } from "./toolExecutor";
 import { fetchAvailableTool } from "./tools";
-import {  FlowNode } from "./types";
+import { FlowNode } from "./types";
 
 // Agent Class
 class Agent {
@@ -9,48 +9,44 @@ class Agent {
   private query: string;
   private executingFlow: IExecutingBotFlow;
 
-  constructor(node: FlowNode, query: string, executingFlow:IExecutingBotFlow) {
+  constructor(node: FlowNode, query: string, executingFlow: IExecutingBotFlow) {
     this.node = node;
     this.query = query;
-    this.executingFlow= executingFlow
+    this.executingFlow = executingFlow;
   }
 
-  async run(): Promise<string | number> {
-
-    
+  async run(): Promise<string | number | undefined> {
     try {
       // tool id is always at the first index of the availableFunction array
-      const toolId= this.node.availableFunctions[0];
-      // fetching tool as per toolId using function.
-      const tool = await fetchAvailableTool(toolId)
-  
+      const toolId = this.node.availableFunctions[0]; // fetching tool as per toolId using function.
+      const tool = await fetchAvailableTool(toolId);
       const executingFlowId = this.executingFlow.id;
-   
-    const result = await ToolExecutor.executeTools(tool, executingFlowId, this.query, this.node);
-     
-    if (result === undefined) {
-      throw new Error("ToolExecutor.executeTools returned undefined");
-    }
-    return result;
+      const result = await ToolExecutor.executeTools(
+        tool,
+        executingFlowId,
+        this.query,
+        this.node
+      );
+      if (result === undefined) {
+        throw new Error("ToolExecutor.executeTools returned undefined");
+      }
+      return result;
     } catch (error: any) {
       console.log("❌ Error in Agent.run():", error.message);
       throw error;
     }
-
   }
 }
 
 export async function nodeAgent(
   node: FlowNode,
   query: string,
-  executingFlow : IExecutingBotFlow
-): Promise<string | number> {
-  console.log("🚀 nodeAgent function called");
-  console.log("Available functions:", node.availableFunctions);
+  executingFlow: IExecutingBotFlow
+): Promise<string | number | undefined> {
+
 
   try {
-  
-    const agent = new Agent(node, query,executingFlow);
+    const agent = new Agent(node, query, executingFlow);
     const result = await agent.run();
     return result;
   } catch (error) {

@@ -111,4 +111,4 @@ async function main(flowId: string, initialQuery: string, userId: string) {
   }
 }
 
-main("68a97ef9b953c4767e977052", "i want to sum", "dummyUserId");
+main("68a97ef9b953c4767e977052", "i want to sum 10 and 20", "dummyUserId");

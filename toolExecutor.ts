@@ -52,7 +52,6 @@ export class ToolExecutor {
         this.executingFlowObject.variables[currentVariableIndex];
       let currentVariableToolName = currentVariableObject.tool;
 
-
       let num1 = Number(
         currentVariableObject?.functionParameters![0].variableValue
       );
@@ -67,28 +66,32 @@ export class ToolExecutor {
         result = Tools.multiply(num1, num2);
       } else if (currentVariableToolName === "Division") {
         result = Tools.division(num1, num2);
+      } else if (currentVariableToolName === "Subtract") {
+        result = Tools.subtract(num1, num2);
+      } else if (currentVariableToolName === "Mod") {
+        result = Tools.mod(num1, num2);
       } else {
         console.error(`Unknown tool: ${currentVariableToolName}`);
         return;
       }
 
-    console.log(`Tool execution result: ${result}`);
+      console.log(`Tool execution result: ${result}`); // Update the state of the current node to "Completed"
 
-      // Update the state of the current node to "Completed"
-      await ExecutingBotFlow.findOneAndUpdate(
-        { _id: this.executingFlowObject?.id },
-        {
-          $set: {
-            "nodes.$[elem].nodeState": "Completed",
-          },
-        },
-        {
-          new: true,
-          arrayFilters: [ { "elem.userAgentName": this.node?.userAgentName } ]
-        }
-      );
-      console.log(`Node '${this.node?.userAgentName}' state updated to 'Completed'.`);
-
+      await ExecutingBotFlow.findOneAndUpdate(
+        { _id: this.executingFlowObject?.id },
+        {
+          $set: {
+            "nodes.$[elem].nodeState": "Completed",
+          },
+        },
+        {
+          new: true,
+          arrayFilters: [{ "elem.userAgentName": this.node?.userAgentName }],
+        }
+      );
+      console.log(
+        `Node '${this.node?.userAgentName}' state updated to 'Completed'.`
+      );
 
       if (this.node?.condition && this.node.condition.length > 0) {
         console.log("Conditions found. Sending result and conditions to LLM.");
@@ -190,10 +193,9 @@ export class ToolExecutor {
       } // LLM ko updated query ke saath call karna
       this.history.push({ role: "user", content: query });
       const prompt = `You are a helpful assistant that fills in a function's parameters based on a user's query. Your task is to extract parameter values and return the updated parameter list in a JSON array.
-
-      Function Name: ${this.availableTool.toolName}
-      Required Parameters: ${JSON.stringify(this.availableTool.parameters)}
-      Current Parameters: ${JSON.stringify(
+       Function Name: ${this.availableTool.toolName}
+       Required Parameters: ${JSON.stringify(this.availableTool.parameters)}
+       Current Parameters: ${JSON.stringify(
         latestVariableEntry?.functionParameters || []
       )}
       
@@ -210,7 +212,6 @@ export class ToolExecutor {
         this.history,
         query
       );
-
 
       const updatedFunctionParameters = JSON.parse(parametersJsonString); // Update the specific variable entry in the database
       const updatedBotFlow = await ExecutingBotFlow.findOneAndUpdate(
@@ -363,9 +364,9 @@ export class ToolExecutor {
     if (updatedExecutingFlow) {
       this.executingFlowObject =
         updatedExecutingFlow as unknown as IExecutingBotFlow;
-      console.log("Executing flow document updated successfully.");
+      console.log(" Executing flow document updated successfully.");
     } else {
-      console.error("Failed to update executing flow: Document not found.");
+      console.error(" Failed to update executing flow: Document not found.");
     }
   }
 

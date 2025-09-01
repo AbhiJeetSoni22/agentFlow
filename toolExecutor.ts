@@ -363,7 +363,7 @@ export class ToolExecutor {
     if (updatedExecutingFlow) {
       this.executingFlowObject =
         updatedExecutingFlow as unknown as IExecutingBotFlow;
-      console.log(" Executing flow document updated successfully.");
+      console.log("Executing flow document updated successfully.");
     } else {
       console.error("Failed to update executing flow: Document not found.");
     }

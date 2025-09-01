@@ -56,7 +56,7 @@ async function main(flowId: string, initialQuery: string, userId: string) {
         if (nextNode) {
           console.log(
             "➡️ Transitioning to next node:",
-            nextNode.displayAgentName
+            nextNode.userAgentName
           );
           currentNode = nextNode; // Yahan se agla input lein, agar zaroorat ho
           console.log(

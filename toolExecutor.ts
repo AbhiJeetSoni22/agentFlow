@@ -5,7 +5,7 @@ import { Tool } from "./tool.interface";
 import { Tools } from "./tools";
 import { FlowNode } from "./types";
 
-// Define Message type if not already imported
+
 type Message = { role: "user" | "assistant"; content: string };
 
 export class ToolExecutor {

@@ -16,7 +16,7 @@ export async function nodeAgent(
     const toolId = node.availableFunctions?.[0].funId;
 
     if (!toolId) {
-      console.error("❌ Error: No tool ID found in the node.");
+      console.error("Error: No tool ID found in the node.");
       return "Error";
     }
     const tool = await fetchAvailableTool(toolId);
@@ -35,7 +35,7 @@ export async function nodeAgent(
 
     return result;
   } catch (error) {
-    console.error("❌ Error in nodeAgent:", error);
+    console.error("Error in nodeAgent:", error);
     if (error instanceof Error) {
       console.error("Error message:", error.message);
       console.error("Error stack:", error.stack);

@@ -1,7 +1,4 @@
-// file: tool.interface.ts
 
-// Since the fetch is .lean(), _id is a plain ObjectId string
-// (or a Mongoose ObjectId type which can be treated as a string)
 
 export interface Tool {
     _id: string; // The _id is not a nested object, it's a string

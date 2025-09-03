@@ -35,7 +35,6 @@ class ManualFlow {
       }
       await dbConnect(uri);
       const flowObject = await BotFlow.findById(this.flowId);
-    
 
       const flow: any[] = flowObject?.flow ?? [];
       if (flow.length === 0) {
@@ -55,16 +54,21 @@ class ManualFlow {
         variables: [],
       };
 
-      const newExecutingFlow: IExecutingBotFlow = (await ExecutingBotFlow.create(
-        executingFlowData
-      )) as unknown as IExecutingBotFlow;
+      const newExecutingFlow: IExecutingBotFlow =
+        (await ExecutingBotFlow.create(
+          executingFlowData
+        )) as unknown as IExecutingBotFlow;
 
       let currentNode = flow[0];
       let nextNodeId: string | number | undefined;
       let currentQuery = this.initialQuery;
 
       while (true) {
-        nextNodeId = await nodeAgent(currentNode, currentQuery, newExecutingFlow);
+        nextNodeId = await nodeAgent(
+          currentNode,
+          currentQuery,
+          newExecutingFlow
+        );
 
         if (nextNodeId === "PROMPT_REQUIRED") {
           const updatedFlow = await ExecutingBotFlow.findById(
@@ -94,7 +98,9 @@ class ManualFlow {
           }
           continue;
         } else if (typeof nextNodeId === "string") {
-          const nextNode = flow.find((node) => node.userAgentName === nextNodeId);
+          const nextNode = flow.find(
+            (node) => node.userAgentName === nextNodeId
+          );
           if (nextNode) {
             currentNode = nextNode;
             currentQuery = "";

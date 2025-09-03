@@ -9,7 +9,7 @@ export async function nodeAgent(
   executingFlow: IExecutingBotFlow
 ): Promise<string | number | undefined> {
   console.log("🚀 nodeAgent function called");
-  console.log("Available functions:", node.availableFunctions[0]);
+
 
   try {
     // Fetch the tool using the ID from the first available function.

@@ -1,4 +1,7 @@
-
+interface IAvailable{
+  funId: string;
+  funName: string
+}
 export interface FlowNode {
   agentName: string;
   displayAgentName: string;
@@ -8,7 +11,7 @@ export interface FlowNode {
   agentModel: string;
   hardCodeFunction?: string | null;
   grabFunctionFrom?: string | null;
-  availableFunctions: string[];
+  availableFunctions: IAvailable[];
   condition: any[];
   _id?: string;
 }
@@ -56,3 +59,5 @@ export interface AvailableTool {
   toolType: string;
   __v: number;
 }
+
+

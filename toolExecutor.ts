@@ -263,7 +263,6 @@ export class ToolExecutor {
     if (Object.keys(update.$push).length === 0) {
       delete update.$push;
     }
-
     const updatedExecutingFlow = await ExecutingBotFlow.findOneAndUpdate(
       { _id: executingFlowId },
       update,
@@ -277,7 +276,6 @@ export class ToolExecutor {
       console.error("Failed to update executing flow: Document not found.");
     }
   }
-
   private async updateBotFlowState(executingFlowId: string): Promise<void> {
     if (this.availableTool) {
       await this.updateExecutingFlowDocument(
@@ -286,7 +284,6 @@ export class ToolExecutor {
       );
     }
   }
-
   public static async executeTools(
     tool: any,
     executingFlowId: string,

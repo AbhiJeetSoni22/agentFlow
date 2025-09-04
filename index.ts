@@ -22,7 +22,6 @@ wss.on("connection", async (ws) => {
     let executingFlowId: ObjectId | null = null;
     let initialQuerySent = false;
 
-    // Database connection
     const uri = process.env.DB_URI as string;
     if (!uri) {
         console.log("uri not found");

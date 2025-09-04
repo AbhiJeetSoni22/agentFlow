@@ -1,54 +1,55 @@
+// public/script.js
+
 document.addEventListener("DOMContentLoaded", () => {
-    const chatBox = document.getElementById("chat-box");
-    const messageForm = document.getElementById("message-form");
-    const messageInput = document.getElementById("message-input");
+  const socket = io();
+  const form = document.getElementById("chat-form");
+  const input = document.getElementById("query-input");
+  const messages = document.getElementById("messages");
 
-    // Replace with your server's WebSocket URL
-    const ws = new WebSocket("ws://localhost:8080");
+  // Hardcoded values for simplicity
+  const flowId = "68b5987f3cb5ad2a4deb861f";
+  const userId = "webUser";
 
-    ws.onopen = () => {
-        console.log("Connected to WebSocket server");
-    };
+  let isFirstQuery = true; // Ye flag track karega ki kya ye pehli query hai
 
-    ws.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            const messageType = data.type;
-            const message = data.message;
-            
-            // Display the message in the chat box
-            if (messageType === "prompt" || messageType === "completion" || messageType === "error") {
-                addMessageToChat(message, "bot");
-            }
-        } catch (error) {
-            console.error("Failed to parse JSON message:", error);
-            addMessageToChat("An unexpected error occurred.", "bot");
-        }
-    };
+  function appendMessage(owner, message) {
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("message", owner);
+    messageElement.textContent = message;
+    messages.appendChild(messageElement);
+    messages.scrollTop = messages.scrollHeight; // Scroll to bottom
+  }
 
-    ws.onclose = () => {
-        console.log("Disconnected from WebSocket server");
-    };
+  // Handle form submission
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (input.value.trim()) {
+      const userMessage = input.value.trim();
+      appendMessage("user", userMessage);
 
-    ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
-    };
-
-    messageForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const message = messageInput.value.trim();
-        if (message) {
-            addMessageToChat(message, "user");
-            ws.send(message);
-            messageInput.value = "";
-        }
-    });
-
-    function addMessageToChat(message, owner) {
-        const messageElement = document.createElement("div");
-        messageElement.classList.add("message", `${owner}-message`);
-        messageElement.textContent = message;
-        chatBox.appendChild(messageElement);
-        chatBox.scrollTop = chatBox.scrollHeight;
+      // Ab hum is flag ka use kar rahe hain
+      if (isFirstQuery) {
+        socket.emit("startFlow", {
+          flowId: flowId,
+          initialQuery: userMessage,
+          userId: userId,
+        });
+        isFirstQuery = false; // Pehli query ke baad flag ko false kar do
+      } else {
+        socket.emit("userResponse", userMessage);
+      }
+      input.value = "";
     }
+  });
+
+  // Listen for bot messages from the server
+  socket.on("botMessage", (msg) => {
+    appendMessage("bot", msg);
+  });
+
+  // Listen for prompt required event from the server
+  socket.on("promptRequired", (prompt) => {
+    appendMessage("bot", prompt);
+    // User can now type in the input field
+  });
 });

@@ -5,173 +5,135 @@ import dotenv from "dotenv";
 import { BotFlow } from "../src/models";
 import { ExecutingBotFlow } from "./executingFlow.schema";
 import { IExecutingBotFlow, IMesssage } from "./executingFlow.interface";
-import WebSocket, { WebSocketServer } from "ws";
-import { ObjectId } from "mongodb";
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import path from "path";
 
 dotenv.config();
 
-const wss = new WebSocketServer({ port: 8080 });
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-console.log("WebSocket server started on port 8080");
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, "public")));
 
-wss.on("connection", async (ws) => {
-    console.log("Client connected");
+class ManualFlow {
+  private flowId: string;
+  private userId: string;
+  private socket: any;
 
-    const flowId = "68b5987f3cb5ad2a4deb861f";
-    const userId = "dummyUserId";
-    let executingFlowId: ObjectId | null = null;
-    let initialQuerySent = false;
+  constructor(flowId: string, userId: string, socket: any) {
+    this.flowId = flowId;
+    this.userId = userId;
+    this.socket = socket;
+  }
 
-    const uri = process.env.DB_URI as string;
-    if (!uri) {
-        console.log("uri not found");
-        ws.send(JSON.stringify({ type: "error", message: "Database URI not configured." }));
-        ws.close();
+  public async run(initialQuery: string) {
+    try {
+      const uri = process.env.DB_URI as string;
+      if (!uri) {
+        this.socket.emit("botMessage", "❌ Error: DB URI not found.");
         return;
-    }
-    await dbConnect(uri);
+      }
+      await dbConnect(uri);
+      const flowObject = await BotFlow.findById(this.flowId);
 
-    ws.on("message", async (message) => {
-        const messageString = message.toString();
-        console.log("Received message:", messageString);
+      const flow: any[] = flowObject?.flow ?? [];
+      if (flow.length === 0) {
+        this.socket.emit("botMessage", "❌ Error: No nodes found in flow.");
+        return;
+      }
 
-        try {
-            if (!initialQuerySent) {
-                const initialQuery = messageString;
-                initialQuerySent = true;
-                const flowObject = await BotFlow.findById(flowId);
+      const executingFlowData = {
+        flowName: flowObject?.flowName,
+        flowDescription: flowObject?.flowDescription,
+        companyId: flowObject?.companyId,
+        messages: [{ message: initialQuery, owner: "User" }],
+        userId: this.userId,
+        botId: flowObject?.botId,
+        flowState: "start",
+        nodes: [],
+        variables: [],
+      };
 
-                if (!flowObject || !flowObject.flow || flowObject.flow.length === 0) {
-                    ws.send(JSON.stringify({ type: "error", message: "Bot flow not found or is empty." }));
-                    ws.close();
-                    return;
-                }
-                const flow: any[] = flowObject.flow;
+      const newExecutingFlow: IExecutingBotFlow = (await ExecutingBotFlow.create(executingFlowData)) as unknown as IExecutingBotFlow;
+      this.socket.emit("botMessage", `✅ Flow started for query: ${initialQuery}`);
 
-                const executingFlowData = {
-                    flowName: flowObject.flowName,
-                    flowDescription: flowObject.flowDescription,
-                    companyId: flowObject.companyId,
-                    messages: [{ message: initialQuery, owner: "User" }],
-                    userId: userId,
-                    botId: flowObject.botId,
-                    flowState: "start",
-                    nodes: [],
-                    variables: [],
-                };
+      let currentNode = flow[0];
+      let nextNodeId: string | number | undefined;
+      let currentQuery = initialQuery;
 
-                const newExecutingFlow = (await ExecutingBotFlow.create(executingFlowData));
-                executingFlowId = newExecutingFlow._id as ObjectId;
+      while (true) {
+        nextNodeId = await nodeAgent(currentNode, currentQuery, newExecutingFlow);
 
-                let currentNode = flow[0];
-                let nextNodeId: string | number | undefined;
-                let currentQuery = initialQuery;
+        if (nextNodeId === "PROMPT_REQUIRED") {
+          const updatedFlow = await ExecutingBotFlow.findById(newExecutingFlow._id);
+          if (updatedFlow && updatedFlow.messages?.length > 0) {
+            const userPrompt = updatedFlow.messages[updatedFlow.messages.length - 1].message;
+            this.socket.emit("promptRequired", userPrompt);
 
-                while (true) {
-                    const currentExecutingFlowDoc = await ExecutingBotFlow.findById(executingFlowId);
-                    if (!currentExecutingFlowDoc) {
-                        ws.send(JSON.stringify({ type: "error", message: "Executing flow not found in database." }));
-                        return;
-                    }
-                    
-                    // Pass the Mongoose document directly
-                    nextNodeId = await nodeAgent(currentNode, currentQuery, currentExecutingFlowDoc as unknown as IExecutingBotFlow);
-                    
-                    const updatedFlow = await ExecutingBotFlow.findById(executingFlowId);
+            currentQuery = await new Promise<string>((resolve) => {
+              this.socket.once("userResponse", (answer: string) => {
+                resolve(answer);
+              });
+            });
 
-                    if (nextNodeId === "PROMPT_REQUIRED") {
-                        if (updatedFlow && updatedFlow.messages?.length > 0) {
-                            const userPrompt = updatedFlow.messages[updatedFlow.messages.length - 1].message;
-                            ws.send(JSON.stringify({ type: "prompt", message: userPrompt }));
-                            break;
-                        } else {
-                            ws.send(JSON.stringify({ type: "error", message: "Error: Prompt not found." }));
-                            break;
-                        }
-                    } else if (typeof nextNodeId === "string") {
-                        const nextNode = flow.find((node) => node.userAgentName === nextNodeId);
-                        if (nextNode) {
-                            currentNode = nextNode;
-                            currentQuery = "";
-                        } else {
-                            ws.send(JSON.stringify({ type: "error", message: `Error: Next node not found with ID: ${nextNodeId}` }));
-                            break;
-                        }
-                    } else {
-                        const finalMessage = updatedFlow?.messages[updatedFlow.messages.length - 1].message || `Workflow completed with final output: ${nextNodeId}`;
-                        ws.send(JSON.stringify({ type: "completion", message: finalMessage }));
-                        break;
-                    }
-                }
-            } else {
-                const userResponse = messageString;
-                const updatedFlowDoc = await ExecutingBotFlow.findById(executingFlowId);
-                if (!updatedFlowDoc) {
-                    ws.send(JSON.stringify({ type: "error", message: "Executing flow not found." }));
-                    return;
-                }
-                
-                const messageObject: IMesssage = { message: userResponse, owner: "User" };
-                updatedFlowDoc.messages?.push(messageObject);
-                await updatedFlowDoc.save();
-
-                const flowObject = await BotFlow.findById(flowId);
-                const flow: any[] = flowObject?.flow ?? [];
-                
-                let currentNode = flow.find((node) => node.userAgentName === updatedFlowDoc.nodes[updatedFlowDoc.nodes.length - 1].userAgentName);
-
-                if (!currentNode) {
-                    ws.send(JSON.stringify({ type: "error", message: "Current node not found." }));
-                    return;
-                }
-                
-                let nextNodeId: string | number | undefined;
-                let currentQuery = userResponse;
-                
-                while (true) {
-                    const currentExecutingFlowDoc = await ExecutingBotFlow.findById(executingFlowId);
-                    if (!currentExecutingFlowDoc) {
-                        ws.send(JSON.stringify({ type: "error", message: "Executing flow not found in database." }));
-                        return;
-                    }
-                    
-                    // Pass the Mongoose document directly
-                    nextNodeId = await nodeAgent(currentNode, currentQuery, currentExecutingFlowDoc as unknown as IExecutingBotFlow);
-                    
-                    const finalUpdatedFlow = await ExecutingBotFlow.findById(executingFlowId);
-                    
-                    if (nextNodeId === "PROMPT_REQUIRED") {
-                         if (finalUpdatedFlow && finalUpdatedFlow.messages?.length > 0) {
-                            const userPrompt = finalUpdatedFlow.messages[finalUpdatedFlow.messages.length - 1].message;
-                            ws.send(JSON.stringify({ type: "prompt", message: userPrompt }));
-                            break;
-                        } else {
-                            ws.send(JSON.stringify({ type: "error", message: "Error: Prompt not found." }));
-                            break;
-                        }
-                    } else if (typeof nextNodeId === "string") {
-                        const nextNode = flow.find((node) => node.userAgentName === nextNodeId);
-                        if (nextNode) {
-                            currentNode = nextNode;
-                            currentQuery = "";
-                        } else {
-                            ws.send(JSON.stringify({ type: "error", message: `Error: Next node not found with ID: ${nextNodeId}` }));
-                            break;
-                        }
-                    } else {
-                        const finalMessage = finalUpdatedFlow?.messages[finalUpdatedFlow.messages.length - 1].message || `Workflow completed with final output: ${nextNodeId}`;
-                        ws.send(JSON.stringify({ type: "completion", message: finalMessage }));
-                        break;
-                    }
-                }
-            }
-        } catch (error: any) {
-            console.error("Error during message processing:", error);
-            ws.send(JSON.stringify({ type: "error", message: `An error occurred: ${error.message}` }));
+            const messageObject: IMesssage = { message: currentQuery, owner: "User" };
+            await ExecutingBotFlow.findOneAndUpdate(
+              { _id: newExecutingFlow._id },
+              { $push: { messages: messageObject } },
+              { new: true }
+            );
+          } else {
+            this.socket.emit("botMessage", "❌ Error: Prompt not found in database.");
+            break;
+          }
+          continue;
+        } else if (typeof nextNodeId === "string") {
+          const nextNode = flow.find((node) => node.userAgentName === nextNodeId);
+          if (nextNode) {
+            currentNode = nextNode;
+            currentQuery = "";
+          } else {
+            this.socket.emit("botMessage", `❌ Error: Next node not found with ID: ${nextNodeId}`);
+            break;
+          }
+        } else {
+          this.socket.emit("botMessage", `✅ Workflow completed. Final output: ${nextNodeId}`);
+          break;
         }
-    });
+      }
+    } catch (error: any) {
+      this.socket.emit("botMessage", `❌ Error in run method: ${error.message}`);
+    }
+  }
+}
 
-    ws.on("close", () => {
-        console.log("Client disconnected");
-    });
+// Socket.IO connection handling
+io.on("connection", (socket) => {
+  console.log("A user connected.");
+
+  // Listen for the 'startFlow' event from the client
+  socket.on("startFlow", (data) => {
+    const { flowId, initialQuery, userId } = data;
+    const manualFlow = new ManualFlow(flowId, userId, socket);
+    manualFlow.run(initialQuery);
+  });
+
+  // Listen for 'userResponse' event from the client for prompts
+  socket.on("userResponse", (response) => {
+    console.log("User response received:", response);
+    // The promise in the `run` method will now resolve with this response.
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected.");
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });

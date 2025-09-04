@@ -5,126 +5,174 @@ import dotenv from "dotenv";
 import { BotFlow } from "../src/models";
 import { ExecutingBotFlow } from "./executingFlow.schema";
 import { IExecutingBotFlow, IMesssage } from "./executingFlow.interface";
-import readline from "readline";
+import WebSocket, { WebSocketServer } from "ws";
+import { ObjectId } from "mongodb";
 
 dotenv.config();
 
-// Command line interface setup
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+const wss = new WebSocketServer({ port: 8080 });
 
-class ManualFlow {
-  private flowId: string;
-  private initialQuery: string;
-  private userId: string;
+console.log("WebSocket server started on port 8080");
 
-  constructor(flowId: string, initialQuery: string, userId: string) {
-    this.flowId = flowId;
-    this.initialQuery = initialQuery;
-    this.userId = userId;
-  }
+wss.on("connection", async (ws) => {
+    console.log("Client connected");
 
-  public async run() {
-    try {
-      const uri = process.env.DB_URI as string;
-      if (!uri) {
-        console.log("uri not found ");
+    const flowId = "68b5987f3cb5ad2a4deb861f";
+    const userId = "dummyUserId";
+    let executingFlowId: ObjectId | null = null;
+    let initialQuerySent = false;
+
+    // Database connection
+    const uri = process.env.DB_URI as string;
+    if (!uri) {
+        console.log("uri not found");
+        ws.send(JSON.stringify({ type: "error", message: "Database URI not configured." }));
+        ws.close();
         return;
-      }
-      await dbConnect(uri);
-      const flowObject = await BotFlow.findById(this.flowId);
-
-      const flow: any[] = flowObject?.flow ?? [];
-      if (flow.length === 0) {
-        console.log("No nodes found in flow");
-        return;
-      }
-
-      const executingFlowData = {
-        flowName: flowObject?.flowName,
-        flowDescription: flowObject?.flowDescription,
-        companyId: flowObject?.companyId,
-        messages: [{ message: this.initialQuery, owner: "User" }],
-        userId: this.userId,
-        botId: flowObject?.botId,
-        flowState: "start",
-        nodes: [],
-        variables: [],
-      };
-
-      const newExecutingFlow: IExecutingBotFlow =
-        (await ExecutingBotFlow.create(
-          executingFlowData
-        )) as unknown as IExecutingBotFlow;
-
-      let currentNode = flow[0];
-      let nextNodeId: string | number | undefined;
-      let currentQuery = this.initialQuery;
-
-      while (true) {
-        nextNodeId = await nodeAgent(
-          currentNode,
-          currentQuery,
-          newExecutingFlow
-        );
-
-        if (nextNodeId === "PROMPT_REQUIRED") {
-          const updatedFlow = await ExecutingBotFlow.findById(
-            newExecutingFlow._id
-          );
-          if (updatedFlow && updatedFlow.messages?.length > 0) {
-            const userPrompt =
-              updatedFlow.messages[updatedFlow.messages.length - 1].message;
-            const newQuery = await new Promise<string>((resolve) => {
-              rl.question(userPrompt + "\n", (answer) => {
-                resolve(answer);
-              });
-            });
-            const messageObject: IMesssage = {
-              message: newQuery,
-              owner: "User",
-            };
-            await ExecutingBotFlow.findOneAndUpdate(
-              { _id: newExecutingFlow._id },
-              { $push: { messages: messageObject } },
-              { new: true }
-            );
-            currentQuery = newQuery;
-          } else {
-            console.error("❌ Error: Prompt not found in database.");
-            break;
-          }
-          continue;
-        } else if (typeof nextNodeId === "string") {
-          const nextNode = flow.find(
-            (node) => node.userAgentName === nextNodeId
-          );
-          if (nextNode) {
-            currentNode = nextNode;
-            currentQuery = "";
-          } else {
-            console.error("❌ Error: Next node not found with ID:", nextNodeId);
-            break;
-          }
-        } else {
-          console.log("✅ Workflow completed. Final output:", nextNodeId);
-          break;
-        }
-      }
-    } catch (error: any) {
-      console.log("error in run method", error.message);
-    } finally {
-      rl.close();
     }
-  }
-}
+    await dbConnect(uri);
 
-// Instantiate and run the class
-const flowId = "68b5987f3cb5ad2a4deb861f";
-const initialQuery = "i want to sum 10 and 15";
-const userId = "dummyUserId";
+    ws.on("message", async (message) => {
+        const messageString = message.toString();
+        console.log("Received message:", messageString);
 
-const manualFlow = new ManualFlow(flowId, initialQuery, userId);
-manualFlow.run();
+        try {
+            if (!initialQuerySent) {
+                const initialQuery = messageString;
+                initialQuerySent = true;
+                const flowObject = await BotFlow.findById(flowId);
+
+                if (!flowObject || !flowObject.flow || flowObject.flow.length === 0) {
+                    ws.send(JSON.stringify({ type: "error", message: "Bot flow not found or is empty." }));
+                    ws.close();
+                    return;
+                }
+                const flow: any[] = flowObject.flow;
+
+                const executingFlowData = {
+                    flowName: flowObject.flowName,
+                    flowDescription: flowObject.flowDescription,
+                    companyId: flowObject.companyId,
+                    messages: [{ message: initialQuery, owner: "User" }],
+                    userId: userId,
+                    botId: flowObject.botId,
+                    flowState: "start",
+                    nodes: [],
+                    variables: [],
+                };
+
+                const newExecutingFlow = (await ExecutingBotFlow.create(executingFlowData));
+                executingFlowId = newExecutingFlow._id as ObjectId;
+
+                let currentNode = flow[0];
+                let nextNodeId: string | number | undefined;
+                let currentQuery = initialQuery;
+
+                while (true) {
+                    const currentExecutingFlowDoc = await ExecutingBotFlow.findById(executingFlowId);
+                    if (!currentExecutingFlowDoc) {
+                        ws.send(JSON.stringify({ type: "error", message: "Executing flow not found in database." }));
+                        return;
+                    }
+                    
+                    // Pass the Mongoose document directly
+                    nextNodeId = await nodeAgent(currentNode, currentQuery, currentExecutingFlowDoc as unknown as IExecutingBotFlow);
+                    
+                    const updatedFlow = await ExecutingBotFlow.findById(executingFlowId);
+
+                    if (nextNodeId === "PROMPT_REQUIRED") {
+                        if (updatedFlow && updatedFlow.messages?.length > 0) {
+                            const userPrompt = updatedFlow.messages[updatedFlow.messages.length - 1].message;
+                            ws.send(JSON.stringify({ type: "prompt", message: userPrompt }));
+                            break;
+                        } else {
+                            ws.send(JSON.stringify({ type: "error", message: "Error: Prompt not found." }));
+                            break;
+                        }
+                    } else if (typeof nextNodeId === "string") {
+                        const nextNode = flow.find((node) => node.userAgentName === nextNodeId);
+                        if (nextNode) {
+                            currentNode = nextNode;
+                            currentQuery = "";
+                        } else {
+                            ws.send(JSON.stringify({ type: "error", message: `Error: Next node not found with ID: ${nextNodeId}` }));
+                            break;
+                        }
+                    } else {
+                        const finalMessage = updatedFlow?.messages[updatedFlow.messages.length - 1].message || `Workflow completed with final output: ${nextNodeId}`;
+                        ws.send(JSON.stringify({ type: "completion", message: finalMessage }));
+                        break;
+                    }
+                }
+            } else {
+                const userResponse = messageString;
+                const updatedFlowDoc = await ExecutingBotFlow.findById(executingFlowId);
+                if (!updatedFlowDoc) {
+                    ws.send(JSON.stringify({ type: "error", message: "Executing flow not found." }));
+                    return;
+                }
+                
+                const messageObject: IMesssage = { message: userResponse, owner: "User" };
+                updatedFlowDoc.messages?.push(messageObject);
+                await updatedFlowDoc.save();
+
+                const flowObject = await BotFlow.findById(flowId);
+                const flow: any[] = flowObject?.flow ?? [];
+                
+                let currentNode = flow.find((node) => node.userAgentName === updatedFlowDoc.nodes[updatedFlowDoc.nodes.length - 1].userAgentName);
+
+                if (!currentNode) {
+                    ws.send(JSON.stringify({ type: "error", message: "Current node not found." }));
+                    return;
+                }
+                
+                let nextNodeId: string | number | undefined;
+                let currentQuery = userResponse;
+                
+                while (true) {
+                    const currentExecutingFlowDoc = await ExecutingBotFlow.findById(executingFlowId);
+                    if (!currentExecutingFlowDoc) {
+                        ws.send(JSON.stringify({ type: "error", message: "Executing flow not found in database." }));
+                        return;
+                    }
+                    
+                    // Pass the Mongoose document directly
+                    nextNodeId = await nodeAgent(currentNode, currentQuery, currentExecutingFlowDoc as unknown as IExecutingBotFlow);
+                    
+                    const finalUpdatedFlow = await ExecutingBotFlow.findById(executingFlowId);
+                    
+                    if (nextNodeId === "PROMPT_REQUIRED") {
+                         if (finalUpdatedFlow && finalUpdatedFlow.messages?.length > 0) {
+                            const userPrompt = finalUpdatedFlow.messages[finalUpdatedFlow.messages.length - 1].message;
+                            ws.send(JSON.stringify({ type: "prompt", message: userPrompt }));
+                            break;
+                        } else {
+                            ws.send(JSON.stringify({ type: "error", message: "Error: Prompt not found." }));
+                            break;
+                        }
+                    } else if (typeof nextNodeId === "string") {
+                        const nextNode = flow.find((node) => node.userAgentName === nextNodeId);
+                        if (nextNode) {
+                            currentNode = nextNode;
+                            currentQuery = "";
+                        } else {
+                            ws.send(JSON.stringify({ type: "error", message: `Error: Next node not found with ID: ${nextNodeId}` }));
+                            break;
+                        }
+                    } else {
+                        const finalMessage = finalUpdatedFlow?.messages[finalUpdatedFlow.messages.length - 1].message || `Workflow completed with final output: ${nextNodeId}`;
+                        ws.send(JSON.stringify({ type: "completion", message: finalMessage }));
+                        break;
+                    }
+                }
+            }
+        } catch (error: any) {
+            console.error("Error during message processing:", error);
+            ws.send(JSON.stringify({ type: "error", message: `An error occurred: ${error.message}` }));
+        }
+    });
+
+    ws.on("close", () => {
+        console.log("Client disconnected");
+    });
+});

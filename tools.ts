@@ -32,6 +32,6 @@ export async function fetchAvailableTool(toolId: string) {
     const availableTool = await ToolModel.findById({ _id: toolId }).lean();
     return availableTool;
   } catch (error) {
-    console.log("error during fetching avaliable tools for the botId");
+    console.log("error during fetching available tools for the botId");
   }
 }

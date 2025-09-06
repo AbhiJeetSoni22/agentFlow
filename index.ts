@@ -42,7 +42,7 @@ class ManualFlow {
 
       const flow: any[] = flowObject?.flow ?? [];
       if (flow.length === 0) {
-        this.socket.emit("botMessage", "❌ Error: No nodes found in flow.");
+        this.socket.emit("botMessage", " Error: No nodes found in flow.");
         return;
       }
 
@@ -59,7 +59,7 @@ class ManualFlow {
       };
 
       const newExecutingFlow: IExecutingBotFlow = (await ExecutingBotFlow.create(executingFlowData)) as unknown as IExecutingBotFlow;
-      this.socket.emit("botMessage", `✅ Flow started for query: ${initialQuery}`);
+      this.socket.emit("botMessage", ` Flow started for query: ${initialQuery}`);
 
       let currentNode = flow[0];
       let nextNodeId: string | number | undefined;
@@ -97,16 +97,16 @@ class ManualFlow {
             currentNode = nextNode;
             currentQuery = "";
           } else {
-            this.socket.emit("botMessage", `❌ Error: Next node not found with ID: ${nextNodeId}`);
+            this.socket.emit("botMessage", `Error: Next node not found with ID: ${nextNodeId}`);
             break;
           }
         } else {
-          this.socket.emit("botMessage", `✅ Workflow completed. Final output: ${nextNodeId}`);
+          this.socket.emit("botMessage", `Workflow completed. Final output: ${nextNodeId}`);
           break;
         }
       }
     } catch (error: any) {
-      this.socket.emit("botMessage", `❌ Error in run method: ${error.message}`);
+      this.socket.emit("botMessage", `Error in run method: ${error.message}`);
     }
   }
 }

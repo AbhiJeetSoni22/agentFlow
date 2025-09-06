@@ -84,7 +84,6 @@ export class ToolExecutor {
         }
       );
 
-
       if (this.node?.condition?.length) {
         const nextNodeId = await this.getNextNodeIdFromLLM(
           result,
@@ -132,7 +131,7 @@ export class ToolExecutor {
       const latestVariableEntry = botFlow.variables.length > 0 ? botFlow.variables[botFlow.variables.length - 1] : null;
 
       if (!latestVariableEntry) {
-        console.error("Latest variable entry not found.");
+        console.error("Latest variable entry not found. ");
         return;
       }
 

@@ -97,16 +97,16 @@ class ManualFlow {
             currentNode = nextNode;
             currentQuery = "";
           } else {
-            this.socket.emit("botMessage", `❌ Error: Next node not found with ID: ${nextNodeId}`);
+            this.socket.emit("botMessage", `Error: Next node not found with ID: ${nextNodeId}`);
             break;
           }
         } else {
-          this.socket.emit("botMessage", `✅ Workflow completed. Final output: ${nextNodeId}`);
+          this.socket.emit("botMessage", `Workflow completed. Final output: ${nextNodeId}`);
           break;
         }
       }
     } catch (error: any) {
-      this.socket.emit("botMessage", `❌ Error in run method: ${error.message}`);
+      this.socket.emit("botMessage", `Error in run method: ${error.message}`);
     }
   }
 }

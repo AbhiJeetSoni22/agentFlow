@@ -84,7 +84,6 @@ export class ToolExecutor {
         }
       );
 
-
       if (this.node?.condition?.length) {
         const nextNodeId = await this.getNextNodeIdFromLLM(
           result,

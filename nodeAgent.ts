@@ -30,12 +30,12 @@ export async function nodeAgent(
     );
 
     if (result === undefined) {
-      throw new Error("ToolExecutor.executeTools returned undefined");
+      throw new Error("ToolExecutor.executeTools returned undefined ");
     }
 
     return result;
   } catch (error) {
-    console.error("Error in nodeAgent:", error);
+    console.error("Error in nodeAgent :", error);
     if (error instanceof Error) {
       console.error("Error message:", error.message);
       console.error("Error stack:", error.stack);

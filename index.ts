@@ -42,7 +42,7 @@ class ManualFlow {
 
       const flow: any[] = flowObject?.flow ?? [];
       if (flow.length === 0) {
-        this.socket.emit("botMessage", "❌ Error: No nodes found in flow.");
+        this.socket.emit("botMessage", " Error: No nodes found in flow.");
         return;
       }
 
@@ -59,7 +59,7 @@ class ManualFlow {
       };
 
       const newExecutingFlow: IExecutingBotFlow = (await ExecutingBotFlow.create(executingFlowData)) as unknown as IExecutingBotFlow;
-      this.socket.emit("botMessage", `✅ Flow started for query: ${initialQuery}`);
+      this.socket.emit("botMessage", ` Flow started for query: ${initialQuery}`);
 
       let currentNode = flow[0];
       let nextNodeId: string | number | undefined;

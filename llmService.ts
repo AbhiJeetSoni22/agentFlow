@@ -40,9 +40,7 @@ export class LLMService {
         }
     }
 
-    /**
-     * Calls the Grok API
-     */
+
     public async callGrok(
         modelPrompt: string, 
         context: Message[], 

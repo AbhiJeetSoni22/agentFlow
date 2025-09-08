@@ -180,7 +180,6 @@ export class ToolExecutor {
           arrayFilters: [{ "elem.userAgentName": this.node?.userAgentName }],
         }
       );
-
       if (!updatedBotFlow) {
         console.error("Failed to update ExecutingBotFlow document.");
         return;

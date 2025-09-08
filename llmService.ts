@@ -24,8 +24,6 @@ export class LLMService {
     };
 
     constructor(model: string = 'grok') {
-       
-   
 
         // Initialize xAI provider
         this.xaiProvider = createXai({

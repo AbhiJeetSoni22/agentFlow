@@ -34,7 +34,7 @@ class ManualFlow {
     try {
       const uri = process.env.DB_URI as string;
       if (!uri) {
-        this.socket.emit("botMessage", " Error: DB URI not found.");
+        this.socket.emit("botMessage", " Error: DB URI not found check the uri in the dotenv file.");
         return;
       }
       await dbConnect(uri);

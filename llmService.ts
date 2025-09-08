@@ -36,10 +36,9 @@ export class LLMService {
         if (model.toLowerCase() === 'grok') {
             this.call = this.callGrok;
         } else {
-            throw new Error(`Model "${model}" is not supported. Only 'grok' is available.`);
+            throw new Error(`Model "${model}"  is not supported. Only 'grok' is available.`);
         }
     }
-
 
     public async callGrok(
         modelPrompt: string, 

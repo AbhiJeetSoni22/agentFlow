@@ -8,7 +8,7 @@ export async function nodeAgent(
   query: string,
   executingFlow: IExecutingBotFlow
 ): Promise<string | number | undefined> {
-  console.log("🚀 nodeAgent function called continuing to the toolExecutor");
+  console.log("🚀 nodeAgent function called ");
 
 
   try {

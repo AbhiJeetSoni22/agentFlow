@@ -1,7 +1,7 @@
 
 
 export interface Tool {
-    _id: string; // The _id is not a nested object, it's a string
+    _id: string; 
     toolName: string;
     toolDescription: string;
     parameters: Array<{

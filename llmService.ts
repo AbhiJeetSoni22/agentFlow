@@ -24,7 +24,7 @@ export class LLMService {
     };
 
     constructor(model: string = 'grok') {
-        // Validate API key
+       
    
 
         // Initialize xAI provider

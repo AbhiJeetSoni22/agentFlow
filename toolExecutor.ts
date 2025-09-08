@@ -199,7 +199,7 @@ export class ToolExecutor {
         const missingNames = missingParams
           .map((param: any) => param.variableName)
           .join(", ");
-        const userPrompt = `For the '${this.availableTool?.toolName}' tool, please provide the value for the following parameters: ${missingNames}.`;
+        const userPrompt = `For the '${this.availableTool?.toolName}' tool, please provide the value  parameters: ${missingNames}.`;
         const messageObject: IMesssage = {
           message: userPrompt,
           owner: "System",

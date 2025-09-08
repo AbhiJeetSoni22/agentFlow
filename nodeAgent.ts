@@ -12,7 +12,7 @@ export async function nodeAgent(
 
 
   try {
-    // Fetch the tool using the ID from the first available function.
+    // Fetch the tool using the 
     const toolId = node.availableFunctions?.[0].funId;
 
     if (!toolId) {

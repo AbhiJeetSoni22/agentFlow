@@ -34,7 +34,7 @@ class ManualFlow {
     try {
       const uri = process.env.DB_URI as string;
       if (!uri) {
-        this.socket.emit("botMessage", "❌ Error: DB URI not found.");
+        this.socket.emit("botMessage", " Error: DB URI not found.");
         return;
       }
       await dbConnect(uri);
@@ -51,7 +51,7 @@ class ManualFlow {
         flowDescription: flowObject?.flowDescription,
         companyId: flowObject?.companyId,
         messages: [{ message: initialQuery, owner: "User" }],
-        userId: this.userId, // Yahan par socket ID store hogi
+        userId: this.userId, 
         botId: flowObject?.botId,
         flowState: "start",
         nodes: [],

@@ -72,7 +72,7 @@ export class ToolExecutor {
       const result = operation(num1, num2);
       console.log(`Tool execution result: ${result}`);
 
-      // Update the state of the current node to "Completed"
+
       await ExecutingBotFlow.findOneAndUpdate(
         { _id: this.executingFlowObject.id },
         {

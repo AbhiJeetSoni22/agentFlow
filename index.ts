@@ -42,7 +42,7 @@ class ManualFlow {
 
       const flow: any[] = flowObject?.flow ?? [];
       if (flow.length === 0) {
-        this.socket.emit("botMessage", " Error: No nodes found in flow.");
+        this.socket.emit("botMessage", " Error: No nodes found in flow recheck the execution.");
         return;
       }
 

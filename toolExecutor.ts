@@ -204,7 +204,7 @@ export class ToolExecutor {
         return "PROMPT_REQUIRED";
       }
     } catch (error) {
-      console.error("Error in functionalAgent:", error);
+      console.error("Error in functionalAgent check the execution:", error);
       return "Error"; // Return a consistent error message
     }
   }

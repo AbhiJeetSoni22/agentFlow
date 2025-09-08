@@ -8,7 +8,7 @@ export async function nodeAgent(
   query: string,
   executingFlow: IExecutingBotFlow
 ): Promise<string | number | undefined> {
-  console.log("🚀 nodeAgent function called");
+  console.log("🚀 nodeAgent function called continuing to the toolExecutor");
 
 
   try {
@@ -29,7 +29,7 @@ export async function nodeAgent(
     );
 
     if (result === undefined) {
-      throw new Error("ToolExecutor.executeTools returned undefined ");
+      throw new Error("ToolExecutor.executeTools returned undefined check the execution ");
     }
 
     return result;

@@ -12,9 +12,8 @@ export async function nodeAgent(
 
 
   try {
-    // Fetch the tool using the 
+    
     const toolId = node.availableFunctions?.[0].funId;
-
     if (!toolId) {
       console.error("Error: No tool ID found in the node.");
       return "Error";

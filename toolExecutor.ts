@@ -248,7 +248,6 @@ export class ToolExecutor {
         variableValue: p.value ?? null,
         received: p.received ?? false,
       })) || [];
-
       const newVariableEntry = {
         state: false,
         userAgentName: this.node.userAgentName,
@@ -270,7 +269,6 @@ export class ToolExecutor {
 
     if (updatedExecutingFlow) {
       this.executingFlowObject = updatedExecutingFlow as unknown as IExecutingBotFlow;
-
     } else {
       console.error("Failed to update executing flow: Document not found.");
     }

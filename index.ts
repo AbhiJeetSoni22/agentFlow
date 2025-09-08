@@ -16,7 +16,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve static files from the 'public' directory
+// Serve static files from the 'public' folder
 app.use(express.static(path.join(__dirname, "public")));
 
 class ManualFlow {

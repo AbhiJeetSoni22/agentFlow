@@ -21,7 +21,7 @@ export class Tools {
 
   static mod(a: number, b: number): number {
     if (b === 0) {
-      throw new Error("Modulus by zero is not allowed check the variabe values.");
+      throw new Error("Modulus by zero is not allowed check the variable  values and give correct values.");
     }
     return a % b;
   }
@@ -32,6 +32,6 @@ export async function fetchAvailableTool(toolId: string) {
     const availableTool = await ToolModel.findById({ _id: toolId }).lean();
     return availableTool;
   } catch (error) {
-    console.log("error during fetching available tools for the botId");
+    console.log("error during fetching available tools for the botId check the toolId properly");
   }
 }

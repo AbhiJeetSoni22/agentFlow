@@ -69,7 +69,7 @@ export class ToolExecutor {
 
       const operation = operations[toolName];
       const result = operation(num1, num2);
-      console.log(`Tool execution result: ${result}`);
+    
 
       await ExecutingBotFlow.findOneAndUpdate(
         { _id: this.executingFlowObject.id },
@@ -181,7 +181,7 @@ export class ToolExecutor {
         }
       );
       if (!updatedBotFlow) {
-        console.error("Failed to update ExecutingBotFlow document.");
+        console.error("Failed to update ExecutingBotFlow document. ");
         return;
       }
 
@@ -198,7 +198,7 @@ export class ToolExecutor {
         const missingNames = missingParams
           .map((param: any) => param.variableName)
           .join(", ");
-        const userPrompt = `For the '${this.availableTool?.toolName}' tool, please provide the value  parameters: ${missingNames}.`;
+        const userPrompt = `For the '${this.availableTool?.toolName}' tool, please  provide the value for the following parameters: ${missingNames}.`;
         const messageObject: IMesssage = {
           message: userPrompt,
           owner: "System",

@@ -10,7 +10,6 @@ export async function nodeAgent(
 ): Promise<string | number | undefined> {
   console.log("🚀 nodeAgent function called");
 
-
   try {
     
     const toolId = node.availableFunctions?.[0].funId;

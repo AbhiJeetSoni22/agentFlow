@@ -31,8 +31,7 @@ export class LLMService {
         this.xaiProvider = createXai({
                   apiKey: process.env.GROK_API_KEY,
         });
-   
-        // Set the appropriate call method based on model
+
         if (model.toLowerCase() === 'grok') {
             this.call = this.callGrok;
         } else {

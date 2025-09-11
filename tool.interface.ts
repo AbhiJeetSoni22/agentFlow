@@ -6,7 +6,7 @@ export interface Tool {
     parameters: Array<{
         key: string;
         validation: string;
-        _id: string; // This will also be a string
+        _id: string; 
     }>;
     companyId: string;
     botId: string;

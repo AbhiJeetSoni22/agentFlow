@@ -1,139 +1,172 @@
 // index.ts
-import dbConnect from "./db";
-import { nodeAgent } from "./nodeAgent";
-import dotenv from "dotenv";
-import { BotFlow } from "../src/models";
-import { ExecutingBotFlow } from "./executingFlow.schema";
-import { IExecutingBotFlow, IMesssage } from "./executingFlow.interface";
-import express from "express";
-import http from "http";
-import { Server } from "socket.io";
-import path from "path";
 
-dotenv.config();
+import { nodeAgent } from "../services/flowService/nodeAgentService";
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+import { BotFlow } from "../models";
 
+import { ExecutingBotFlow } from "../models/executingFlow";
 
-app.use(express.static(path.join(__dirname, "public")));
+import {
+  IExecutingBotFlow,
+  IMesssage,
+} from "../interfaces/executingFlow.interface";
 
-class ManualFlow {
+import { Socket } from "socket.io";
+
+export class ManualFlow {
   private flowId: string;
-  private userId: string;
-  private socket: any;
 
-  constructor(flowId: string, userId: string, socket: any) {
+  private initialQuery: string;
+
+  private userId: string;
+
+  private botId: string;
+
+  constructor(
+    flowId: string,
+    initialQuery: string,
+    userId: string,
+    botId: string
+  ) {
     this.flowId = flowId;
+
+    this.initialQuery = initialQuery;
+
     this.userId = userId;
-    this.socket = socket;
+
+    this.botId = botId; //
   }
 
-  public async run(initialQuery: string) {
+  public async run(
+    socket: Socket,
+    confirmationAwaiting: Map<string, (response: string) => void>
+  ) {
     try {
-      const uri = process.env.DB_URI as string;
-      if (!uri) {
-        this.socket.emit("botMessage", " Error: DB URI not found check the uri in the dotenv file.");
-        return;
-      }
-      await dbConnect(uri);
       const flowObject = await BotFlow.findById(this.flowId);
 
       const flow: any[] = flowObject?.flow ?? [];
+
       if (flow.length === 0) {
-        this.socket.emit("botMessage", " Error: No nodes found in flow recheck the execution.");
+        console.log("No nodes found in flow");
+
         return;
       }
 
       const executingFlowData = {
         flowName: flowObject?.flowName,
+
         flowDescription: flowObject?.flowDescription,
+
         companyId: flowObject?.companyId,
-        messages: [{ message: initialQuery, owner: "User" }],
-        userId: this.userId, 
+
+        messages: [{ message: this.initialQuery, owner: "User" }],
+
+        userId: this.userId,
+
         botId: flowObject?.botId,
+
         flowState: "start",
+
         nodes: [],
+
         variables: [],
       };
 
-      const newExecutingFlow: IExecutingBotFlow = (await ExecutingBotFlow.create(executingFlowData)) as unknown as IExecutingBotFlow;
-      this.socket.emit("botMessage", ` Flow started for query: ${initialQuery}`);
+      const newExecutingFlow: IExecutingBotFlow =
+        (await ExecutingBotFlow.create(
+          executingFlowData
+        )) as unknown as IExecutingBotFlow;
 
       let currentNode = flow[0];
+
       let nextNodeId: string | number | undefined;
-      let currentQuery = initialQuery;
+
+      let currentQuery = this.initialQuery;
 
       while (true) {
-        nextNodeId = await nodeAgent(currentNode, currentQuery, newExecutingFlow);
+        nextNodeId = await nodeAgent(
+          currentNode,
+          currentQuery,
+          newExecutingFlow
+        );
 
         if (nextNodeId === "PROMPT_REQUIRED") {
-          const updatedFlow = await ExecutingBotFlow.findById(newExecutingFlow._id);
-          if (updatedFlow && updatedFlow.messages?.length > 0) {
-            const userPrompt = updatedFlow.messages[updatedFlow.messages.length - 1].message;
-            this.socket.emit("promptRequired", userPrompt);
+          const updatedFlow = await ExecutingBotFlow.findById(
+            newExecutingFlow._id
+          );
 
-            currentQuery = await new Promise<string>((resolve) => {
-              this.socket.once("userResponse", (answer: string) => {
-                resolve(answer);
-              });
+          if (updatedFlow && updatedFlow.messages?.length > 0) {
+            const userPrompt =
+              updatedFlow.messages[updatedFlow.messages.length - 1].message;
+
+            console.log("user id is ", this.userId);
+
+            console.log("bot id is ", this.botId);
+
+            console.log("message for the frontend", userPrompt); // Frontend ko message bhejo ki user se prompt chahiye
+
+            socket.emit("receiveMessageToUser", {
+              message: userPrompt,
+
+              sender: this.botId,
+
+              receiver: this.userId,
+            }); // Wait for a response from the user
+
+            const newQuery = await new Promise<string>((resolve) => {
+              confirmationAwaiting.set(socket.id, resolve);
             });
 
-            const messageObject: IMesssage = { message: currentQuery, owner: "User" };
+            const messageObject: IMesssage = {
+              message: newQuery,
+
+              owner: "User",
+            };
+
             await ExecutingBotFlow.findOneAndUpdate(
               { _id: newExecutingFlow._id },
+
               { $push: { messages: messageObject } },
+
               { new: true }
             );
+
+            currentQuery = newQuery;
           } else {
-            this.socket.emit("botMessage", "❌ Error: Prompt not found in database.");
+            console.error("❌ Error: Prompt not found in database.");
+
             break;
           }
+
           continue;
         } else if (typeof nextNodeId === "string") {
-          const nextNode = flow.find((node) => node.userAgentName === nextNodeId);
+          const nextNode = flow.find(
+            (node) => node.userAgentName === nextNodeId
+          );
+
           if (nextNode) {
             currentNode = nextNode;
+
             currentQuery = "";
           } else {
-            this.socket.emit("botMessage", `Error: Next node not found with ID: ${nextNodeId}`);
-            break;
+            return "Thankyou FlowEnded";
           }
         } else {
-          this.socket.emit("botMessage", `Workflow completed. Final output: ${nextNodeId}`);
-          break;
+          await ExecutingBotFlow.findOneAndUpdate(
+            { _id: newExecutingFlow._id },
+
+            { flowState: "completed" },
+
+            { new: true }
+          );
+
+          console.log("✅ Workflow completed. Final output:", nextNodeId);
+
+          return nextNodeId;
         }
       }
     } catch (error: any) {
-      this.socket.emit("botMessage", `Error in run method: ${error.message}`);
+      console.log("error in run method", error.message);
     }
   }
 }
-
-// Socket.IO connection handling
-io.on("connection", (socket) => {
-  console.log("A user connected.");
-
-  // Listen for the 'startFlow' event from the client
-  socket.on("startFlow", (data) => {
-    const { flowId, initialQuery, userId } = data;
-    const manualFlow = new ManualFlow(flowId, userId, socket);
-    manualFlow.run(initialQuery);
-  });
-
-  // Listen for 'userResponse' event from the client for prompts
-  socket.on("userResponse", (response) => {
-    console.log("User response received:", response);
-    // The promise in the `run` method will now resolve with this response.
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected.");
-  });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});

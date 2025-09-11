@@ -25,8 +25,8 @@ export interface IVariable {
 
 // 🔹 4. Available Function Interface
 export interface IAvailableFunction {
-  funId?: string | null;
-  funName?: string | null;
+  id?: string | null;
+  name?: string | null;
 }
 
 // 🔹 5. Condition Interface

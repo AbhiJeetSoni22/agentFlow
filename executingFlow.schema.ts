@@ -4,8 +4,8 @@ import mongoose, { Schema } from "mongoose";
 
 // 🔹 Available Functions Schema
 const AvailableFunctionSchema = new Schema({
-funId: { type: String },
-  funName: { type: String },
+   id: { type: String },
+  name: { type: String },
 });
 
 // 🔹 Flow Schema

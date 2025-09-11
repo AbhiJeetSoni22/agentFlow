@@ -280,7 +280,6 @@ private async updateParametersInDb(
         const llmResponse = await llmService.callGrok(prompt, this.history, `Result: ${result}`);
         return llmResponse.trim();
     }
-
     private async saveMessage(content: string) {
         const message: IMesssage = { message: content, owner: "System" };
         await ExecutingBotFlow.findOneAndUpdate(

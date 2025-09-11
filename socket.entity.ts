@@ -566,20 +566,4 @@ export class SocketEntity {
 //         return;
 //     }
 
-//     await new Promise(res => setTimeout(res, 100));
-//     let executeFlow = await this.nodeRedEntity.executeFlow(botId, payload, decision);
-//     console.log("node red Flow execution")
 
-//     socket.emit("receiveMessageToUser", {
-//         message:
-//             JSON.stringify(executeFlow?.data?.apiResponse?.response?.msg)
-//                 ? JSON.stringify(executeFlow?.data?.apiResponse?.response?.msg)
-//                 : JSON.stringify(executeFlow?.data?.apiResponse?.functionName)
-//                     ? JSON.stringify(executeFlow?.data?.apiResponse?.functionName)
-//                     : JSON.stringify(executeFlow?.data?.apiResponse)
-//                         ? JSON.stringify(executeFlow?.data?.apiResponse)
-//                         : "error occurred",
-//         sender: chatMessage.receiver,
-//         receiver: chatMessage.sender,
-//     });
-// }

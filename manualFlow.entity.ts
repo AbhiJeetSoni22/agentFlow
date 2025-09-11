@@ -10,7 +10,6 @@ import {
 } from "../interfaces/executingFlow.interface";
 import { Socket } from "socket.io";
 
-
 export class ManualFlow {
   private flowId: string;
   private initialQuery: string;
@@ -41,36 +40,36 @@ export class ManualFlow {
 
       // Manual flow log update karein jab flow start ho
       await Log.findOneAndUpdate(
-          { sessionId: this.sessionId },
-          { 
-              status: "IN_PROGRESS",
-              $push: {
-                  steps: {
-                      type: "FLOW_START",
-                      content: `Manual flow started for flowId: ${this.flowId}`,
-                      timestamp: new Date()
-                  }
-              }
-          }
+        { sessionId: this.sessionId },
+        {
+          status: "IN_PROGRESS",
+          $push: {
+            steps: {
+              type: "FLOW_START",
+              content: `Manual flow started for flowId: ${this.flowId}`,
+              timestamp: new Date(),
+            },
+          },
+        }
       );
-      
+
       const flow: any[] = flowObject?.flow ?? [];
 
       if (flow.length === 0) {
         console.log("No nodes found in flow");
         // Log update karein ki flow empty hai
         await Log.findOneAndUpdate(
-            { sessionId: this.sessionId },
-            {
-                status: "COMPLETED_WITH_ERROR",
-                $push: {
-                    steps: {
-                        type: "FLOW_ERROR",
-                        content: `Flow has no nodes.`,
-                        timestamp: new Date()
-                    }
-                }
-            }
+          { sessionId: this.sessionId },
+          {
+            status: "COMPLETED_WITH_ERROR",
+            $push: {
+              steps: {
+                type: "FLOW_ERROR",
+                content: `Flow has no nodes.`,
+                timestamp: new Date(),
+              },
+            },
+          }
         );
         return;
       }
@@ -99,16 +98,16 @@ export class ManualFlow {
       while (true) {
         // Log update karein jab har node chal raha ho
         await Log.findOneAndUpdate(
-            { sessionId: this.sessionId },
-            {
-                $push: {
-                    steps: {
-                        type: "NODE_EXECUTION",
-                        content: `Executing node: ${currentNode.userAgentName}`,
-                        timestamp: new Date()
-                    }
-                }
-            }
+          { sessionId: this.sessionId },
+          {
+            $push: {
+              steps: {
+                type: "NODE_EXECUTION",
+                content: `Executing node: ${currentNode.userAgentName}`,
+                timestamp: new Date(),
+              },
+            },
+          }
         );
 
         nextNodeId = await nodeAgent(
@@ -129,27 +128,27 @@ export class ManualFlow {
 
             console.log("user id is ", this.userId);
             console.log("bot id is ", this.botId);
-            console.log("message for the frontend", userPrompt); 
+            console.log("message for the frontend", userPrompt);
 
             // Log update karein jab prompt ki jarurat ho
             await Log.findOneAndUpdate(
-                { sessionId: this.sessionId },
-                {
-                    $push: {
-                        steps: {
-                            type: "USER_PROMPT_REQUIRED",
-                            content: `User prompt required: ${userPrompt}`,
-                            timestamp: new Date()
-                        }
-                    }
-                }
+              { sessionId: this.sessionId },
+              {
+                $push: {
+                  steps: {
+                    type: "USER_PROMPT_REQUIRED",
+                    content: `User prompt required: ${userPrompt}`,
+                    timestamp: new Date(),
+                  },
+                },
+              }
             );
 
             socket.emit("receiveMessageToUser", {
               message: userPrompt,
               sender: this.botId,
               receiver: this.userId,
-            }); 
+            });
 
             const newQuery = await new Promise<string>((resolve) => {
               confirmationAwaiting.set(socket.id, resolve);
@@ -171,17 +170,17 @@ export class ManualFlow {
             console.error("❌ Error: Prompt not found in database.");
             // Log update karein jab error aaye
             await Log.findOneAndUpdate(
-                { sessionId: this.sessionId },
-                {
-                    status: "COMPLETED_WITH_ERROR",
-                    $push: {
-                        steps: {
-                            type: "FLOW_ERROR",
-                            content: "Prompt not found in database.",
-                            timestamp: new Date()
-                        }
-                    }
-                }
+              { sessionId: this.sessionId },
+              {
+                status: "COMPLETED_WITH_ERROR",
+                $push: {
+                  steps: {
+                    type: "FLOW_ERROR",
+                    content: "Prompt not found in database.",
+                    timestamp: new Date(),
+                  },
+                },
+              }
             );
             break;
           }
@@ -194,25 +193,25 @@ export class ManualFlow {
           if (nextNode) {
             // Log update karein jab next node mil jaye
             await Log.findOneAndUpdate(
-                { sessionId: this.sessionId },
-                {
-                    $push: {
-                        steps: {
-                            type: "NEXT_NODE_FOUND",
-                            content: `Next node found: ${nextNodeId}`,
-                            timestamp: new Date()
-                        }
-                    }
-                }
+              { sessionId: this.sessionId },
+              {
+                $push: {
+                  steps: {
+                    type: "NEXT_NODE_FOUND",
+                    content: `Next node found: ${nextNodeId}`,
+                    timestamp: new Date(),
+                  },
+                },
+              }
             );
             currentNode = nextNode;
             currentQuery = "";
           } else {
-             // Log update karein jab next node na mile
+            // Log update karein jab next node na mile
             await ExecutingBotFlow.findOneAndUpdate(
-                { _id: newExecutingFlow._id },
-                { flowState: "completed" },
-                { new: true }
+              { _id: newExecutingFlow._id },
+              { flowState: "completed" },
+              { new: true }
             );
 
             return "Thankyou FlowEnded";
@@ -225,20 +224,20 @@ export class ManualFlow {
           );
 
           console.log("✅ Workflow completed. Final output:", nextNodeId);
-          
+
           // Log update karein jab flow successfuly complete ho
           await Log.findOneAndUpdate(
             { sessionId: this.sessionId },
             {
-                status: "COMPLETED",
-                finalAnswer: nextNodeId,
-                $push: {
-                    steps: {
-                        type: "FLOW_COMPLETED",
-                        content: `Flow completed with final result: ${nextNodeId}`,
-                        timestamp: new Date()
-                    }
-                }
+              status: "COMPLETED",
+              finalAnswer: nextNodeId,
+              $push: {
+                steps: {
+                  type: "FLOW_COMPLETED",
+                  content: `Flow completed with final result: ${nextNodeId}`,
+                  timestamp: new Date(),
+                },
+              },
             }
           );
           return nextNodeId;
@@ -248,17 +247,17 @@ export class ManualFlow {
       console.log("error in run method", error.message);
       // Catch block mein bhi log update karein
       await Log.findOneAndUpdate(
-          { sessionId: this.sessionId },
-          {
-              status: "COMPLETED_WITH_ERROR",
-              $push: {
-                  steps: {
-                      type: "FLOW_ERROR",
-                      content: `Error in run method: ${error.message}`,
-                      timestamp: new Date()
-                  }
-              }
-          }
+        { sessionId: this.sessionId },
+        {
+          status: "COMPLETED_WITH_ERROR",
+          $push: {
+            steps: {
+              type: "FLOW_ERROR",
+              content: `Error in run method: ${error.message}`,
+              timestamp: new Date(),
+            },
+          },
+        }
       );
       return "Error";
     }

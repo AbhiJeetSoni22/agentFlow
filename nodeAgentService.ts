@@ -79,7 +79,7 @@ export async function nodeAgent(
   node: FlowNode,
   query: string,
   executingFlow: IExecutingBotFlow,
-  sessionId:string
+  sessionId: string
 ): Promise<string | number | undefined> {
   console.log("Available functions:", node.availableFunctions[0]);
 

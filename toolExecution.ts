@@ -65,7 +65,6 @@ export async function executeToolById(toolId: string, args: any, endUserId: stri
             return await executeApiTool(tool as unknown as Tool, args,endUserId);
         case 'CRM':
             return await executeCrmTool(tool as unknown as Tool, args, endUserId);
-       
         default:
             return undefined
     }

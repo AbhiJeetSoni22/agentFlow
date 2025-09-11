@@ -78,7 +78,8 @@ export async function fetchAvailableTool(toolId: string) {
 export async function nodeAgent(
   node: FlowNode,
   query: string,
-  executingFlow: IExecutingBotFlow
+  executingFlow: IExecutingBotFlow,
+  sessionId:string
 ): Promise<string | number | undefined> {
   console.log("Available functions:", node.availableFunctions[0]);
 
@@ -95,7 +96,8 @@ export async function nodeAgent(
       tool,
       executingFlowId,
       query,
-      node
+      node,
+      sessionId
     );
 
     if (result === undefined) {

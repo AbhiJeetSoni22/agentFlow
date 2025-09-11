@@ -1,11 +1,12 @@
 // Imports
-import { ExecutingBotFlow } from "../../models/executingFlow";
+import { ExecutingBotFlow } from "../../models/executingFlow.schema";
 import { LLMService } from "./llmService";
 import { executeToolById } from "./toolExecution";
 import { IExecutingBotFlow, IMesssage } from "../../interfaces/executingFlow.interface";
 import { Tool } from "../../interfaces/tool.interface";
 import { FlowNode } from "./nodeAgentService";
 import { INode } from "../../interfaces/executingFlow.interface";
+import { Log } from "../../models";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -14,12 +15,14 @@ export class ToolExecutor {
     private executingFlowObject: IExecutingBotFlow | null;
     private node: FlowNode | null;
     private history: Message[];
+    private sessionId:string;
 
-    private constructor(tool: Tool, node: FlowNode) {
+    private constructor(tool: Tool, node: FlowNode,sessionId:string) {
         this.availableTool = tool;
         this.node = node;
         this.executingFlowObject = null;
         this.history = [];
+        this.sessionId=sessionId
     }
 
     // A static factory method for creating and running the executor
@@ -27,9 +30,10 @@ export class ToolExecutor {
         tool: any,
         executingFlowId: string,
         query: string,
-        node: FlowNode
+        node: FlowNode,
+        sessionId:string
     ): Promise<string | number | undefined> {
-        const executor = new ToolExecutor(tool, node);
+        const executor = new ToolExecutor(tool, node,sessionId);
         await executor.updateFlowDocumentAndState(executingFlowId);
         const result = await executor.functionalAgent(query, executingFlowId);
         return result === null ? undefined : result;
@@ -167,30 +171,52 @@ Instructions:
 6. Do NOT include any extra text, code blocks, or explanations outside the JSON array.`;
     }
 
-    private async updateParametersInDb(
-        executingFlowId: string,
-        userAgentName: string,
-        updatedFunctionParameters: any[],
-        allParametersFilled: boolean
-    ): Promise<void> {
-        await ExecutingBotFlow.findOneAndUpdate(
-            {
-                _id: executingFlowId,
-                "variables.userAgentName": userAgentName,
+private async updateParametersInDb(
+    executingFlowId: string,
+    userAgentName: string,
+    updatedFunctionParameters: any[],
+    allParametersFilled: boolean
+): Promise<void> {
+    // executingFlowId se poora document nikal lein
+    const executingFlow = await ExecutingBotFlow.findById(executingFlowId);
+
+    // Agar executingFlow milta hai to sessionId use karein
+    const sessionId = this.sessionId; // Assume kar rahe hain ki sessionId ExecutingBotFlow schema mein hai
+
+    await ExecutingBotFlow.findOneAndUpdate(
+        {
+            _id: executingFlowId,
+            "variables.userAgentName": userAgentName,
+        },
+        {
+            $set: {
+                "variables.$[elem].functionParameters": updatedFunctionParameters,
+                "variables.$[elem].state": allParametersFilled,
             },
+        },
+        {
+            new: true,
+            arrayFilters: [{ "elem.userAgentName": userAgentName }],
+        }
+    );
+
+    // Agar saare parameters fill ho gaye hain, to log mein step add karein
+    if (allParametersFilled && sessionId) {
+        await Log.findOneAndUpdate(
+            { sessionId: sessionId },
             {
-                $set: {
-                    "variables.$[elem].functionParameters": updatedFunctionParameters,
-                    "variables.$[elem].state": allParametersFilled,
+                $push: {
+                    steps: {
+                        type: "PARAMETERS_GATHERED",
+                        content: `All parameters are gathered.`,
+                        timestamp: new Date(),
+                    },
                 },
-            },
-            {
-                new: true,
-                arrayFilters: [{ "elem.userAgentName": userAgentName }],
             }
         );
+        console.log(`✅ Log: All parameters gathered for ${userAgentName}.`);
     }
-
+}
     private async handleToolExecutionAndConditions(executingFlowId: string, updatedFunctionParameters: any[]) {
         const args = updatedFunctionParameters.reduce((obj: any, param: any) => {
             obj[param.variableName] = param.variableValue;
@@ -210,7 +236,19 @@ Instructions:
             { $set: { "nodes.$[elem].nodeState": "Completed" } },
             { new: true, arrayFilters: [{ "elem.userAgentName": this.node?.userAgentName }] }
         );
-
+        const sessionId = this.sessionId
+                await Log.findOneAndUpdate(
+            { sessionId: sessionId },
+            {
+                $push: {
+                    steps: {
+                        type: "node executed",
+                        content: `node execution completed with result ${executionResult}.`,
+                        timestamp: new Date(),
+                    },
+                },
+            }
+        );
         if (this.node?.condition?.length) {
             const nextNodeId = await this.getNextNodeIdFromLLM(executionResult, this.node.condition);
             await this.saveMessage(`LLM's decision: Proceed to node with ID ${nextNodeId} based on result ${executionResult}.`);

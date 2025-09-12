@@ -7,6 +7,7 @@ import { ToolExecutor } from "../services/toolExecuter";
 import { Log } from "../models";
 import { v4 as uuidv4 } from "uuid";
 import { LLMService } from "../services/llmService";
+
 import { receiveMessageFromBot, saveMessage } from "../controllers";
 import {
   AccountDeatilsEntity,
@@ -74,13 +75,13 @@ export class SocketEntity {
 
   private async handleUserMessage(chatMessage: any, socket: Socket) {
     try {
-  
+      // Step 1: Initialize variables and get bot details
       let isMessageSentToBot = true;
       let isSendToNodeRed = true;
       let sendToReactAgent = true;
       let botId = "";
 
-      
+      // Get details based on the receiver or sender
       const agentDetails =
         (await this.accountDetailsService.getCompanyDetailsById(
           chatMessage.receiver
@@ -168,55 +169,52 @@ export class SocketEntity {
         return;
       }
 
-      if (isSendToNodeRed) {
-        // 💡 Yahan Node-Red ke liye logging logic add kiya gaya hai
+        if (isSendToNodeRed) {
+
         const endUserId = chatMessage.sender;
         const sessionId = uuidv4();
         const initialQuery = chatMessage.message;
-        console.log("control here in issendtonodered");
+   
         const nodeRedLog = new Log({
           companyId,
           botId,
           endUserId,
           sessionId,
           initialQuery,
-          status: "IN_PROGRESS", // Kyunki Node-Red flow abhi shuru hoga
-          logsType: "NODE_RED", // logsType ko 'NODE_RED' par set karein
+          status: "IN_PROGRESS", 
+          logsType: "NODE_RED", 
         });
         await nodeRedLog.save();
 
-        let manualFlow = this.manualFlowInstances.get(socket.id);
-        if (!manualFlow) {
-          const userId = chatMessage.sender;
-          const botId = chatMessage.receiver;
+        let manualFlow = this.manualFlowInstances.get(socket.id);
+        if (!manualFlow) {
+          const userId = chatMessage.sender;
+          const botId = chatMessage.receiver;
 
-          let account = await accountDeatils.findOne(
-            { _id: botId },
-            { companyId: 1, _id: 0 }
-          );
+          let account = await accountDeatils.findOne(
+            { _id: botId },
+            { botId: 1, _id: 0 }
+          );
 
-          const flow = await BotFlow.findOne(
-            { companyId: account?.companyId },
-            { _id: 1 }
-          ).skip(7);
+          const flow = await BotFlow.findOne(
+            { botId: account?.botId,
+              flowType:"NODE_RED"
+            },
+            { _id: 1 }
+          );
 
-          const flowId = flow?.id;
-          if (!flowId) {
-            throw new Error("Flow ID not configured for this bot.");
-          }
+          const flowId = flow?.id;
+          if (!flowId) {
+            throw new Error("Flow ID not configured for this bot.");
+          }
 
-          manualFlow = new ManualFlow(
-            flowId,
-            chatMessage.message,
-            userId,
-            botId,
-            sessionId
-          );
-          this.manualFlowInstances.set(socket.id, manualFlow);
-        }
+          manualFlow = new ManualFlow(flowId,chatMessage.message,userId,botId,sessionId);
+          this.manualFlowInstances.set(socket.id, manualFlow);
+        }
 
-        const result = await manualFlow.run(socket, this.confirmationAwaiting);
-        if (typeof result === "string" || typeof result === "number") {
+        const result = await manualFlow.run(socket, this.confirmationAwaiting);
+        
+        if (typeof result === "string" || typeof result === "number") {
           // Log ko yahan update karein jab flow complete ho jaye
           await Log.findOneAndUpdate(
             { sessionId },
@@ -228,34 +226,31 @@ export class SocketEntity {
                   type: "FINAL_ANSWER",
                   content: result,
                   timestamp: new Date(),
-                },
-              },
+                }
+              }
             }
           );
-          socket.emit("receiveMessageToUser", {
-            message: `Final result: ${result}`,
-            sender: chatMessage.receiver,
-            receiver: chatMessage.sender,
-          });
-        } else {
+          socket.emit("receiveMessageToUser", {
+            message: `Final result: ${result}`,
+            sender: chatMessage.receiver,
+            receiver: chatMessage.sender,
+          });
+        } else {
           // Log ko yahan update karein jab flow completed ho but result na ho
           await Log.findOneAndUpdate(
             { sessionId },
-            {
-              status: "COMPLETED",
-              finalAnswer: "Flow completed without a specific final result.",
-            }
+            { status: "COMPLETED", finalAnswer: "Flow completed without a specific final result." }
           );
-          socket.emit("receiveMessageToUser", {
-            message: "Flow completed without a specific final result.",
-            sender: chatMessage.receiver,
-            receiver: chatMessage.sender,
-          });
-        }
+          socket.emit("receiveMessageToUser", {
+            message: "Flow completed without a specific final result.",
+            sender: chatMessage.receiver,
+            receiver: chatMessage.sender,
+          });
+        }
 
-        this.manualFlowInstances.delete(socket.id);
-        return;
-      }
+        this.manualFlowInstances.delete(socket.id);
+        return;
+      }
 
       if (isMessageSentToBot) {
         let replyFrom = "BOT";
@@ -408,7 +403,7 @@ export class SocketEntity {
   }
 
   private handleNewUserJoined(newUserDetails: any, socket: Socket) {
-    console.log("New user joined", newUserDetails.newUser);
+   
     socket.broadcast.emit("receiveNewUserJoined", {
       newUser: newUserDetails.newUser,
     });
@@ -566,3 +561,21 @@ export class SocketEntity {
 
 //         return;
 //     }
+
+//     await new Promise(res => setTimeout(res, 100));
+//     let executeFlow = await this.nodeRedEntity.executeFlow(botId, payload, decision);
+//     console.log("node red Flow execution")
+
+//     socket.emit("receiveMessageToUser", {
+//         message:
+//             JSON.stringify(executeFlow?.data?.apiResponse?.response?.msg)
+//                 ? JSON.stringify(executeFlow?.data?.apiResponse?.response?.msg)
+//                 : JSON.stringify(executeFlow?.data?.apiResponse?.functionName)
+//                     ? JSON.stringify(executeFlow?.data?.apiResponse?.functionName)
+//                     : JSON.stringify(executeFlow?.data?.apiResponse)
+//                         ? JSON.stringify(executeFlow?.data?.apiResponse)
+//                         : "error occurred",
+//         sender: chatMessage.receiver,
+//         receiver: chatMessage.sender,
+//     });
+// }

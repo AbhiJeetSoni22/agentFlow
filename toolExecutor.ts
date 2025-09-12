@@ -291,6 +291,7 @@ Instructions:
         executionResult,
         this.node.condition
       );
+      console.log('mext node id was',nextNodeId)
       await this.saveMessage(
         `LLM's decision: Proceed to node with ID ${nextNodeId} based on result ${executionResult}.`
       );

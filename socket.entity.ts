@@ -534,6 +534,3 @@ export class SocketEntity {
 //     } else {
 //         businessName = "MY bussisness is in the github tools sector"
 //     }
-
-//     let createFlow = await this.nodeRedEntity.loadFlowToNodeRED(botId, decision)
-//     let payload = { currentChat: "i want to open bank account", businessName: businessName, endUserId: chatMessage.sender, companyId: companyId, accountId: accountIdValue, message: chatMessage.message }

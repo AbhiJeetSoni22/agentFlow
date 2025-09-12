@@ -241,7 +241,7 @@ Instructions:
           },
         }
       );
-      console.log(`✅ Log: All parameters gathered for ${userAgentName}.`);
+ //logs was here
     }
   }
   private async handleToolExecutionAndConditions(

@@ -19,14 +19,12 @@ export async function executeApiTool(
     console.error("❌ Error: Tool or arguments are missing.");
     return undefined;
   }
-
   const toolName = tool.toolName;
 
   if (typeof toolName !== "string" || !(toolName in operations)) {
     console.error(`❌ Unknown or invalid tool: ${toolName}`);
     return undefined;
   }
-
   console.log(`Executing tool: ${toolName} for user: ${endUserId}`);
   console.log(`Arguments received:`, args);
 
@@ -37,6 +35,7 @@ export async function executeApiTool(
 
   return result;
 }
+
 export async function executeCrmTool(
   tool: Tool,
   args: any,
@@ -65,7 +64,6 @@ export async function executeToolById(
 ): Promise<number | undefined | string> {
   try {
     const tool = await ToolModel.findById(toolId).lean();
-
     if (!tool) {
       console.error(`❌ Error: Tool not found with ID: ${toolId}`);
       return "Error: Tool not found";

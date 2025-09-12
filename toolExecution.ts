@@ -16,13 +16,13 @@ export async function executeApiTool(
   endUserId: string
 ): Promise<number | undefined | string> {
   if (!tool || !args) {
-    console.error("❌ Error: Tool or arguments are missing.");
+    console.error(" Error: Tool or arguments are missing.");
     return undefined;
   }
   const toolName = tool.toolName;
 
   if (typeof toolName !== "string" || !(toolName in operations)) {
-    console.error(`❌ Unknown or invalid tool: ${toolName}`);
+    console.error(` Unknown or invalid tool: ${toolName}`);
     return undefined;
   }
   console.log(`Executing tool: ${toolName} for user: ${endUserId}`);
@@ -42,7 +42,7 @@ export async function executeCrmTool(
   endUserId: string
 ): Promise<number | undefined | string> {
   if (!tool || !args) {
-    console.error("❌ Error: Tool or arguments are missing.");
+    console.error(" Error: Tool or arguments are missing.");
     return undefined;
   }
   const saveData = CrmDataModel.create({

@@ -16,14 +16,14 @@ export class ManualFlow {
   private initialQuery: string;
   private userId: string;
   private botId: string;
-  private sessionId: string; // sessionId ko property ke roop mein add karein
+  private sessionId: string; 
 
   constructor(
     flowId: string,
     initialQuery: string,
     userId: string,
     botId: string,
-    sessionId: string // sessionId constructor mein bhi receive karein
+    sessionId: string
   ) {
     this.flowId = flowId;
     this.initialQuery = initialQuery;
@@ -39,7 +39,6 @@ export class ManualFlow {
     try {
       const flowObject = await BotFlow.findById(this.flowId);
 
-     
       await Log.findOneAndUpdate(
           { sessionId: this.sessionId },
           { 

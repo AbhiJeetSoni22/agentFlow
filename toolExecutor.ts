@@ -227,7 +227,6 @@ Instructions:
       }
     );
 
-    // Agar saare parameters fill ho gaye hain, to log mein step add karein
     if (allParametersFilled && sessionId) {
       await Log.findOneAndUpdate(
         { sessionId: sessionId },
@@ -241,7 +240,7 @@ Instructions:
           },
         }
       );
- //logs was here
+
     }
   }
   private async handleToolExecutionAndConditions(

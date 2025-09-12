@@ -86,7 +86,7 @@ export async function nodeAgent(
     // Fetch the tool using the ID from the first available function.
     const toolId = node.availableFunctions?.[0].id;
     if (!toolId) {
-      console.error("❌ Error: No tool ID found in the node.");
+      console.error("Error: No tool ID found in the node.");
       return "Error";
     }
     const tool = await fetchAvailableTool(toolId);

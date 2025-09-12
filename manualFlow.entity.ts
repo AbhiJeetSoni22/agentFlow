@@ -3,7 +3,7 @@
 import { nodeAgent } from "../services/flowService/nodeAgentService";
 import { BotFlow } from "../models";
 import { ExecutingBotFlow } from "../models/executingFlow.schema";
-import { Log } from "../models/Log"; // Log schema import karein
+import { Log } from "../models/Log"; 
 import {
   IExecutingBotFlow,
   IMesssage,
@@ -39,7 +39,7 @@ export class ManualFlow {
     try {
       const flowObject = await BotFlow.findById(this.flowId);
 
-      // Manual flow log update karein jab flow start ho
+     
       await Log.findOneAndUpdate(
           { sessionId: this.sessionId },
           { 
@@ -97,7 +97,7 @@ export class ManualFlow {
       let currentQuery = this.initialQuery;
 
       while (true) {
-        // Log update karein jab har node chal raha ho
+
         await Log.findOneAndUpdate(
             { sessionId: this.sessionId },
             {

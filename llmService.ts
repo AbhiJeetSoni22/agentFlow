@@ -60,7 +60,7 @@ export class LLMService {
                 return text.trim();
             } else {
                 // Handle cases where `text` might be something other than a string
-                throw new Error('Invalid content type returned from Grok API');
+                throw new Error('Invalid content type returned from Grok API ');
             }
         } catch (err: any) {
             console.error('Grok API error:', err.message);

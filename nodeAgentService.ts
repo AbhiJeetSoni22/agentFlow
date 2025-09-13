@@ -70,7 +70,7 @@ export async function fetchAvailableTool(toolId: string) {
 
     return availableTool;
   } catch (error) {
-    console.log("error during fetching available tools for the botId");
+    console.log("error during fetching available tools for the botId ");
   }
 }
 
@@ -100,7 +100,7 @@ export async function nodeAgent(
     );
 
     if (result === undefined) {
-      throw new Error("ToolExecutor.executeTools returned undefined");
+      throw new Error("ToolExecutor.executeTools returned");
     }
 
     return result;

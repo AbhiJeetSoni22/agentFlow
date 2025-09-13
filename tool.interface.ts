@@ -4,6 +4,7 @@ export interface Tool {
   toolDescription: string;
   parameters: Array<{
     key: string;
+    
     validation: string;
     _id: string;
   }>;

@@ -208,7 +208,7 @@ export class SocketEntity {
             throw new Error("Flow ID not configured for this bot.");
           }
 
-          manualFlow = new ManualFlow(flowId,chatMessage.message,userId,botId,sessionId);
+          manualFlow = new ManualFlow(flowId,chatMessage.message,userId,botId,sessionId,this.handleUserMessage.bind(this));
           this.manualFlowInstances.set(socket.id, manualFlow);
         }
 
@@ -231,7 +231,7 @@ export class SocketEntity {
             }
           );
           socket.emit("receiveMessageToUser", {
-            message: `Final result: ${result}`,
+            message: `nodeRed result: ${result}`,
             sender: chatMessage.receiver,
             receiver: chatMessage.sender,
           });
@@ -302,12 +302,7 @@ export class SocketEntity {
     }
   }
 
-  private async runReActAgent(
-    chatMessage: any,
-    socket: Socket,
-    companyId: string,
-    botId: string
-  ) {
+  private async runReActAgent(chatMessage: any,socket: Socket,companyId: string,botId: string) {
     try {
       console.log("react agent started");
 
@@ -476,3 +471,106 @@ export class SocketEntity {
   }
 }
 
+// const botFlow = await this.botFlowEntity.getBotFlow(botId, "ONE")
+// const flowData = botFlow;
+// if (flowData) {
+
+//     const newMsg = {
+//         content: chatMessage.message,
+//         role: "user"
+//     };
+
+//     const decision = await this.orchestrationAgentEntity.decideFlowForChats(botId, chatMessage.sender, chatMessage.message)
+//     console.log("decision" + decision)
+
+//     // Step 1: Find existing running BotState
+//     let botState = await BotState.findOne({
+//         botId,
+//         endUserId: chatMessage.sender,
+//         status: 'RUNNING',
+//         flowId: decision
+//     }).sort({ created: -1 });
+
+//     // Step 2: If found, update messages
+//     if (botState) {
+//         const exists = botState.messages.some(
+//             msg => msg.content === newMsg.content && msg.role === newMsg.role
+//         );
+
+//         if (!exists) {
+//             if (botState.messages.length >= 20) {
+//                 botState.messages.shift(); // remove oldest message
+//             }
+
+//             botState.messages.push(newMsg);
+//             await botState.save();
+//         }
+//     } else {
+//         // Step 3: Create new BotState
+//         botState = new BotState({
+//             endUserId: chatMessage.sender,
+//             botState: [], // initially empty, fill when needed
+//             accountId: accountIdValue,
+//             botId: botId,
+//             companyId: companyId,
+//             status: 'RUNNING',
+//             variables: [],
+//             created: new Date(),
+//             messages: [newMsg],
+//             flowId: decision
+//         });
+
+//         await botState.save();
+//     }
+
+//     let businessName = "";
+//     if (decision === "685993a2f0d0b9527b9f0d41") {
+//         businessName = "MY bussisness is in the github tools sector"
+//     } else {
+//         businessName = "MY bussisness is in the github tools sector"
+//     }
+
+//     let createFlow = await this.nodeRedEntity.loadFlowToNodeRED(botId, decision)
+//     let payload = { currentChat: "i want to open bank account", businessName: businessName, endUserId: chatMessage.sender, companyId: companyId, accountId: accountIdValue, message: chatMessage.message }
+
+//     // hum yeha check kar rhe hai ki jo flow hame orchestration agent se mil rha hai usme kya sirf ek hi agent hai agar haa to usi ko call karo phir:-
+//     let findFlow = await BotFlow.findOne({ _id: new mongoose.Types.ObjectId(decision) })
+//     if (findFlow && findFlow.flow.length === 1) {
+//         let response;
+//         if (findFlow?.flow[0].agentName === "securityLayer") {
+//             console.log("Signle Flow execution")
+//             const data = { flowId: decision, companyId, message: chatMessage.message, endUserId: chatMessage.sender, userAgentName: findFlow?.flow[0].userAgentName, botId, businessName }
+//             response = await this.agenticEntity.securityLayerAgent(data)
+//         } else if (findFlow?.flow[0].agentName === "issueIdentifier") {
+//             const data = { flowId: decision, companyId, message: chatMessage.message, endUserId: chatMessage.sender, userAgentName: findFlow?.flow[0].userAgentName, botId, businessName }
+//             response = await this.agenticEntity.issueIdentifierAgent(data)
+//         } else if (findFlow?.flow[0].agentName === "faqAgent") {
+//             const data = { flowId: decision, companyId, message: chatMessage.message, endUserId: chatMessage.sender, userAgentName: findFlow?.flow[0].userAgentName, botId, businessName }
+//             response = await this.agenticEntity.faqAgent(data)
+//         }
+//         socket.emit("receiveMessageToUser", {
+//             message: response,
+//             sender: chatMessage.receiver,
+//             receiver: chatMessage.sender,
+//         });
+
+//         return;
+//     }
+
+//     await new Promise(res => setTimeout(res, 100));
+//     let executeFlow = await this.nodeRedEntity.executeFlow(botId, payload, decision);
+//     console.log("node red Flow execution")
+
+//     socket.emit("receiveMessageToUser", {
+//         message:
+//             JSON.stringify(executeFlow?.data?.apiResponse?.response?.msg)
+//                 ? JSON.stringify(executeFlow?.data?.apiResponse?.response?.msg)
+//                 : JSON.stringify(executeFlow?.data?.apiResponse?.functionName)
+//                     ? JSON.stringify(executeFlow?.data?.apiResponse?.functionName)
+//                     : JSON.stringify(executeFlow?.data?.apiResponse)
+//                         ? JSON.stringify(executeFlow?.data?.apiResponse)
+//                         : "error occurred",
+//         sender: chatMessage.receiver,
+//         receiver: chatMessage.sender,
+//     });
+// }

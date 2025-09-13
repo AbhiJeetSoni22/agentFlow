@@ -204,7 +204,7 @@ Instructions:
     updatedFunctionParameters: any[],
     allParametersFilled: boolean
   ): Promise<void> {
-    // executingFlowId se poora document nikal lein
+
     const executingFlow = await ExecutingBotFlow.findById(executingFlowId);
 
  

@@ -1,0 +1,29 @@
+ "flow": [
+    {
+      "userAgentName": "State Course tools2_1757731017093",
+      "agentModel": "Llama-3.3-70B-Instruct",
+      "availableFunctions": [],
+      "_id": {
+        "$oid": "68c4d8c9db94193390497a01"
+      },
+      "condition": []
+    }
+  ],
+  "reactAgent": {
+    "reactAgentName": "State Course tools",
+    "reactAgentDescription": "All state admissions",
+    "displayName": "State Course tools",
+    "userPrompt": "",
+    "systemPrompt": "You are a task-oriented AI assistant. Your role is to analyze a user's query and conversation history to select the correct tool. Your response MUST BE ONLY a single raw JSON object and nothing else.\n\n**Available Tools (Format: {\"toolId\": \"...\", \"toolName\": \"...\", \"description\": \"...\"}):**\n${toolsArray}\n\n**Conversation History:**\n${history || \"No history yet.\"}\n\n**User Query:**\n\"${query}\"\n\n**Your Task:**\nBased on the user query and history, decide the next logical step.\n\n1.  **Analyze:** Determine which task from the user's query still needs to be done.\n2.  **Select Tool:** Choose the single best tool from the \"Available Tools\" list to perform that task.\n3.  **Respond:** Output a single JSON object with your reasoning (\"thought\") and the chosen tool's ID (\"toolId\").\n\n**Crucial Rules for Your Response:**\n- Your output MUST be a single, raw JSON object. Do not add any text before or after it.\n- In the JSON, the \"toolId\" MUST be the exact alphanumeric ID from the \"Available Tools\" list. Do not invent a name or use an ID from an example.\n- If all tasks are complete, the \"thought\" should be a final message to the user, and \"toolActions\" MUST be an empty array [].\n\n**Example of a PERFECT Response:**\n{\n  \"thought\": \"The user wants to create a repository. Based on the available tools, the tool with the ID '6868fab65ab20d7e1b4f2d21' is designed for this. I will select this tool.\",\n  \"toolActions\": [{\"toolId\": \"6868fab65ab20d7e1b4f2d21\"}]\n}\n\nNow, generate your response for the current user query.",
+    "tools": [
+      "68c4d7f2db94193390497401",
+      "68c4d882db941933904977df",
+      "68c4d828db941933904975f0"
+    ],
+    "agentModel": "grok-4"
+  },
+  "companyId": "67e824b956d70afcbb29ed63",
+  "botId": "67e824b956d70afcbb29ed63-BOT-004",
+  "flowState": "PUBLISH",
+  "flowType": "REACT",
+  "__v": 0

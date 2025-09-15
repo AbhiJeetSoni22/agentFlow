@@ -65,7 +65,7 @@ export async function executeToolById(
   try {
     const tool = await ToolModel.findById(toolId).lean();
     if (!tool) {
-      console.error(`❌ Error: Tool not found with ID: ${toolId}`);
+      console.error(` Error: Tool not found with ID: ${toolId}`);
       return "Error: Tool not found";
     }
 
@@ -78,7 +78,7 @@ export async function executeToolById(
         return undefined;
     }
   } catch (error) {
-    console.error("❌ Error in executeToolById:", error);
+    console.error("Error in executeToolById:", error);
     return "Error";
   }
 }

@@ -100,7 +100,7 @@ export class ManualFlow {
       let currentNode = flow[0];
       let nextNodeId: string | number | undefined;
       let currentQuery = this.initialQuery;
-
+      console.log('current query is ',currentQuery)
       while (true) {
         // Log update karein jab har node chal raha ho
         await Log.findOneAndUpdate(
@@ -117,34 +117,52 @@ export class ManualFlow {
         );
         console.log("starting manualflow file");
         // **Yahan naya check add karein**
-       if (currentNode.agentName === "reactAgent") {
-                    console.log('[Decision] Redirecting to ReAct Agent from Node-RED.');
-                    
-                    // `ReactAgentService` ka naya instance banayein
-                    const reactAgentService = new ReactAgentService(confirmationAwaiting);
+if (currentNode.agentName === "reactAgent") {
+    console.log('[Decision] Redirecting to ReAct Agent from Node-RED.');
+    
+    // Naya: Sabse latest executingFlow document fetch karein, sirf aakhri message ke saath
+    const updatedFlow = await ExecutingBotFlow.findOne(
+        { _id: newExecutingFlow._id },
+        { messages: { $slice: -1 } } // Sirf aakhri element lo
+    );
+    
+    let finalQuery = this.initialQuery;
+    
+    // Naya: Agar aakhri message user ka hai, to usse finalQuery set karein
+    if (updatedFlow && updatedFlow.messages && updatedFlow.messages.length > 0) {
+        const lastMessage = updatedFlow.messages[0];
+        if (lastMessage.owner === "User") {
+            finalQuery = lastMessage.message ?? this.initialQuery;
+        }
+    }
+    
+    console.log('Final query to be sent to ReAct Agent:', finalQuery);
 
-                    // companyId ko pehle fetch karen aur check karen
-                    const flowDoc = await BotFlow.findById(this.flowId);
-                    const companyId = flowDoc?.companyId;
-                    if (!companyId) {
-                        throw new Error("Company ID not found for the flow.");
-                    }
-                    
-                    // Service ke `runReActAgent` method ko call karein
-                    await reactAgentService.runReActAgent(
-                        { 
-                            message: currentQuery, 
-                            sender: this.userId, 
-                            receiver: this.botId 
-                        },
-                        socket,
-                        companyId,
-                        this.botId
-                    );
+    const reactAgentService = new ReactAgentService(confirmationAwaiting);
+    const flowDoc = await BotFlow.findById(this.flowId);
+    const companyId = flowDoc?.companyId;
+    const hardCoadedFlowId = currentNode?.userAgentName;
+    
+    if (!companyId) {
+        throw new Error("Company ID not found for the flow.");
+    }
+    
+    // Naya: hardcoded query ko finalQuery se replace karein
+    await reactAgentService.runReActAgent(
+        { 
+            message: finalQuery, 
+            sender: this.userId, 
+            receiver: this.botId 
+        },
+        socket,
+        companyId,
+        this.botId,
+        hardCoadedFlowId
+    );
 
-                    // Ab flow ko end kar dein
-                    return "Flow redirected to ReAct Agent.";
-                }
+    // Ab flow ko end kar dein
+    return "nodered flow ended.";
+}
         nextNodeId = await nodeAgent(
           currentNode,
           currentQuery,

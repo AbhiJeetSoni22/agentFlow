@@ -89,10 +89,7 @@ export class ToolExecutor {
           variableValue: p.value ?? null,
           received: p.received ?? false,
         })) || [];
-      console.log(
-        "function parameter in toolExecutor file ...........",
-        functionParameters
-      );
+
       const newVariableEntry = {
         state: false,
         userAgentName: this.node.userAgentName,

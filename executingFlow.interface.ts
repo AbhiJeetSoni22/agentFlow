@@ -1,6 +1,6 @@
 import { Document } from "mongoose";
 
-// 🔹 1. Parameter Interface
+
 export interface IParameter {
   key: string;
   validation:any;
@@ -8,14 +8,12 @@ export interface IParameter {
   received: boolean;
 }
 
-// 🔹 2. Function Parameters (inside variables array)
 export interface IFunctionParameter {
   variableName?: string | null;
   variableValue?: string | null;
   received?: boolean;
 }
 
-// 🔹 3. Variable Interface (matches variables array in schema)
 export interface IVariable {
   state?: boolean;
   userAgentName?: string | null;
@@ -23,7 +21,6 @@ export interface IVariable {
   functionParameters?: IFunctionParameter[] | null;
 }
 
-// 🔹 4. Available Function Interface
 export interface IAvailableFunction {
   id?: string | null;
   name?: string | null;

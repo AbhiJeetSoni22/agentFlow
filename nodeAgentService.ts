@@ -34,7 +34,7 @@ export class ReactAgentService {
             let toolExecutor = this.executorInstances.get(companyId);
 
             if (!agent || !toolExecutor) {
-                console.log(`[ReAct] Initializing new Agent and Executor for Company ID: ${companyId}`);
+             
                 socket.emit("receiveMessageToUser", {
                     message: "Initializing agent...",
                     sender: chatMessage.receiver,

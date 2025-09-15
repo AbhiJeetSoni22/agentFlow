@@ -32,7 +32,6 @@ const NodeSchema = new Schema({
   }
 });
 
-// 🔹 Executing Bot Flow Schema
 const ExecutingBotFlowSchema = new Schema({
   flowName: { type: String },
   nodes: { type: [NodeSchema] },

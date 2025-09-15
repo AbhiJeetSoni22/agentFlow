@@ -26,7 +26,6 @@ export class ReactAgentService {
         botFlowId?: string
     ) {
         try {
-            console.log("ReAct agent started from ReactAgentService  and chatmessage is .",chatMessage);
          
             let agent = this.agentInstances.get(companyId);
             let toolExecutor = this.executorInstances.get(companyId);
@@ -38,7 +37,6 @@ export class ReactAgentService {
                     sender: chatMessage.receiver,
                     receiver: chatMessage.sender,
                 });
-                console.log('value of userdefined flowId is',botFlowId)
                 agent = await ReActAgent.create(companyId,botFlowId);
                 toolExecutor = await ToolExecutor.create(companyId);
                 this.agentInstances.set(companyId, agent);

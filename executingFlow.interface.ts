@@ -26,7 +26,6 @@ export interface IAvailableFunction {
   name?: string | null;
 }
 
-// 🔹 5. Condition Interface
 export interface ICondition {
   conditionType?: "OnAgentCompletion" | "OnAgentAnswer" | "CUSTOM" | null;
   conditionValue?: string | null;
@@ -47,7 +46,6 @@ export interface IMesssage{
   message:string;
   owner:"User"|"System";
 }
-// 🔹 7. Main Executing Bot Flow Interface
 export interface IExecutingBotFlow extends Document {
   flowName?: string | null;
   nodes?: INode[] | null;

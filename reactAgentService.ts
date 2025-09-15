@@ -25,11 +25,11 @@ export class ReactAgentService {
         socket: Socket,
         companyId: string,
         botId: string,
-        userAgentNameFromFlow?: string
+        botFlowId?: string
     ) {
         try {
-            console.log("ReAct agent started from ReactAgentService.");
-
+            console.log("ReAct agent started from ReactAgentService  and chatmessage is .",chatMessage);
+         
             let agent = this.agentInstances.get(companyId);
             let toolExecutor = this.executorInstances.get(companyId);
 
@@ -40,7 +40,8 @@ export class ReactAgentService {
                     sender: chatMessage.receiver,
                     receiver: chatMessage.sender,
                 });
-                agent = await ReActAgent.create(companyId,'68c54b10660941f2d944666b');
+                console.log('value of userdefined flowId is',botFlowId)
+                agent = await ReActAgent.create(companyId,botFlowId);
                 toolExecutor = await ToolExecutor.create(companyId);
                 this.agentInstances.set(companyId, agent);
                 this.executorInstances.set(companyId, toolExecutor);

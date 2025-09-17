@@ -3,7 +3,6 @@ export class Tools {
   static sum(a: number, b: number): number {
     return a + b;
   }
-
   static multiply(a: number, b: number): number {
     return a * b;
   }

@@ -10,7 +10,7 @@ import { Log } from '../models';
 async function addLogStep(sessionId: string, stepData: Omit<any, 'stepNumber' | '_id' | 'timestamp'>) {
     const log = await Log.findOne({ sessionId });
     if (log) {
-        const logWithSteps = log as any; // Type assertion to access 'steps'
+        const logWithSteps = log as any; 
         const nextStepNumber = logWithSteps.steps.length + 1;
         logWithSteps.steps.push({
             ...stepData,

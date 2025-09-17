@@ -403,7 +403,6 @@ export class SocketEntity {
       newUser: newUserDetails.newUser,
     });
   }
-
   private async handleAdminMessage(adminMessage: any, socket: Socket) {
     console.log("Admin message received:", adminMessage);
     let userType = await this.endUserEntity.findSingleendUser({

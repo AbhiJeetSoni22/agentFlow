@@ -15,7 +15,6 @@ export class ReactAgentService {
     private executorInstances: Map<string, ToolExecutor> = new Map();
     private confirmationAwaiting: Map<string, (response: string) => void>;
 
-    // Constructor mein confirmationAwaiting map ko receive karein
     constructor(confirmationAwaiting: Map<string, (response: string) => void>) {
         this.confirmationAwaiting = confirmationAwaiting;
     }

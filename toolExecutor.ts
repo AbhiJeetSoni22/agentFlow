@@ -28,7 +28,6 @@ export class ToolExecutor {
     this.sessionId = sessionId;
   }
 
-  // A static factory method for creating and running the executor
   public static async executeTools(
     tool: any,
     executingFlowId: string,
@@ -42,7 +41,7 @@ export class ToolExecutor {
     return result === null ? undefined : result;
   }
 
-  // This method combines updateBotFlowState and updateExecutingFlowDocument
+
   private async updateFlowDocumentAndState(
     executingFlowId: string
   ): Promise<void> {

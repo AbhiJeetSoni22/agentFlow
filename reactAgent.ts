@@ -6,7 +6,7 @@ import { ToolExecutor } from "./toolExecuter";
 import { Socket } from "socket.io";
 import { Log } from '../models';
 
-// Helper function to add a log step
+
 async function addLogStep(sessionId: string, stepData: Omit<any, 'stepNumber' | '_id' | 'timestamp'>) {
     const log = await Log.findOne({ sessionId });
     if (log) {

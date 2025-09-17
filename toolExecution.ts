@@ -68,7 +68,6 @@ export async function executeToolById(
       console.error(` Error: Tool not found with ID: ${toolId}`);
       return "Error: Tool not found";
     }
-
     switch (tool.toolType) {
       case "API":
         return await executeApiTool(tool as unknown as Tool, args, endUserId);

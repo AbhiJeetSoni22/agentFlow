@@ -38,7 +38,6 @@ public hardcodedFlowId: string | null = null;
         this.botFlow = null;
     }
 
-    // Create method ab sirf instance banata hai, data fetch nahi karta
     public static async create(companyId: string,hardcodedFlowId?: string): Promise<ReActAgent> {
                    const agent = new ReActAgent(companyId);
         if (hardcodedFlowId ) {
@@ -52,7 +51,6 @@ public hardcodedFlowId: string | null = null;
     private async _loadLatestBotFlowAndTools() {
         console.log(`[ReAct Flow Loader] Fetching latest published REACT BotFlow for companyId: ${this.companyId}`);
         
-        // Step 1: React Agent ka latest published BotFlow fetch karo
          let botFlowQuery: any = { companyId: this.companyId, flowType: 'REACT', flowState: 'PUBLISH' };
         
         // Agar hardcoded ID hai, to query ko override karein
@@ -74,9 +72,6 @@ public hardcodedFlowId: string | null = null;
             this.dynamicTools = [];
             return;
         }
-
-        // Step 3: Sirf vahi tools fetch karo jinki ID 'tools' array mein hai
-        // YEH LINE AUTOMATICALLY MISSING TOOLS KO IGNORE KAR DETI HAI
         const validTools = await ToolModel.find({ '_id': { $in: toolIds } });
         
         if (validTools.length !== toolIds.length) {

@@ -97,7 +97,6 @@ export class SocketEntity {
         botId = agentDetails.botId ?? "";
       }
 
-      // Step 2: Handle messages that are replies to a previous prompt
       if (this.confirmationAwaiting.has(socket.id)) {
         console.log(`[Socket] Received a response from an awaiting user.`);
         const resolver = this.confirmationAwaiting.get(socket.id);

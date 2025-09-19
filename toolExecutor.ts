@@ -41,7 +41,6 @@ export class ToolExecutor {
     return result === null ? undefined : result;
   }
 
-
   private async updateFlowDocumentAndState(
     executingFlowId: string
   ): Promise<void> {

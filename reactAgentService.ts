@@ -66,7 +66,6 @@ export class ReactAgentService {
                     this.confirmationAwaiting.set(socket.id, resolve);
                 });
             };
-
             const endUserId = chatMessage.sender;
             const sessionId = uuidv4();
             const agentLog = new Log({
@@ -85,7 +84,6 @@ export class ReactAgentService {
                 }],
             });
             await agentLog.save();
-
             await agent.run(
                 chatMessage.message,
                 toolExecutor,

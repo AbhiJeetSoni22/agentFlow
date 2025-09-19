@@ -1,6 +1,4 @@
 
-
-// Corrected import for the Grok/xAI provider
 import { createXai } from '@ai-sdk/xai';
 import { generateText } from 'ai';
 
@@ -10,10 +8,9 @@ export interface Message {
 }
 
 export class LLMService {
-    // The xAI/Grok provider instance
+
     private xaiProvider: ReturnType<typeof createXai>;
 
-    // Method to be called based on model - with default implementation
     public call: (
         modelPrompt: string,
         context: Message[],
@@ -55,11 +52,11 @@ export class LLMService {
                 messages: messages,
             });
 
-            // Ensure text is a string before returning
+       
             if (typeof text === 'string') {
                 return text.trim();
             } else {
-                // Handle cases where `text` might be something other than a string
+               
                 throw new Error('Invalid content type returned from Grok API ');
             }
         } catch (err: any) {

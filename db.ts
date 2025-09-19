@@ -13,7 +13,6 @@ async function dbConnect(uri: string): Promise<void> {
     process.exit(1); // exit process if DB connection fails
   }
 
-  // Optional: log connection state changes
   mongoose.connection.on("disconnected", () => {
     console.warn("⚠️ MongoDB disconnected");
   });

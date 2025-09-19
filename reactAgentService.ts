@@ -47,7 +47,6 @@ export class ReactAgentService {
                     receiver: chatMessage.sender,
                 });
             }
-
             const askUser = (question: string): Promise<string> => {
                 return new Promise(async (resolve) => {
                     await saveMessage(

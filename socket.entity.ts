@@ -108,7 +108,7 @@ export class SocketEntity {
         return;
       }
 
-      // Step 3: Save the initial user message to the database
+    
       const findBot = await this.botEntity.getBotDefination({ botId });
       const companyId = findBot?.companyId;
 

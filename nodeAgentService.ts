@@ -17,7 +17,6 @@ export class ReactAgentService {
     constructor(confirmationAwaiting: Map<string, (response: string) => void>) {
         this.confirmationAwaiting = confirmationAwaiting;
     }
-
     public async runReActAgent(
         chatMessage: any,
         socket: Socket,

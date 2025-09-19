@@ -117,7 +117,6 @@ export class ToolExecutor {
       console.error("Error: Tool or Node is not available in functionalAgent.");
       return null;
     }
-
     try {
       const botFlow = await ExecutingBotFlow.findById(executingFlowId);
       const latestVariableEntry = botFlow?.variables?.find(
@@ -128,7 +127,6 @@ export class ToolExecutor {
         console.error("Latest variable entry not found.");
         return null;
       }
-
       const parametersJsonString = await this.getLLMUpdatedParameters(
         query,
         latestVariableEntry

@@ -3,9 +3,9 @@ import mongoose from "mongoose";
 async function dbConnect(uri: string): Promise<void> {
   try {
     await mongoose.connect(uri, {
-      // optional configs (can be customized)
+
       autoIndex: true, // build indexes
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s if no server found
+      serverSelectionTimeoutMS: 5000,
     });
     console.log("✅ MongoDB connected successfully");
   } catch (error) {

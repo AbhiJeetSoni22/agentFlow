@@ -81,7 +81,6 @@ export class SocketEntity {
       let sendToReactAgent = true;
       let botId = "";
 
-      // Get details based on the receiver or sender
       const agentDetails =
         (await this.accountDetailsService.getCompanyDetailsById(
           chatMessage.receiver
@@ -107,7 +106,6 @@ export class SocketEntity {
         return;
       }
 
-    
       const findBot = await this.botEntity.getBotDefination({ botId });
       const companyId = findBot?.companyId;
 
@@ -168,52 +166,55 @@ export class SocketEntity {
         return;
       }
 
-        if (isSendToNodeRed) {
-
+      if (isSendToNodeRed) {
         const endUserId = chatMessage.sender;
         const sessionId = uuidv4();
         const initialQuery = chatMessage.message;
-   
+
         const nodeRedLog = new Log({
           companyId,
           botId,
           endUserId,
           sessionId,
           initialQuery,
-          status: "IN_PROGRESS", 
-          logsType: "NODE_RED", 
+          status: "IN_PROGRESS",
+          logsType: "NODE_RED",
         });
         await nodeRedLog.save();
 
-        let manualFlow = this.manualFlowInstances.get(socket.id);
-        if (!manualFlow) {
-          const userId = chatMessage.sender;
-          const botId = chatMessage.receiver;
+        let manualFlow = this.manualFlowInstances.get(socket.id);
+        if (!manualFlow) {
+          const userId = chatMessage.sender;
+          const botId = chatMessage.receiver;
 
-          let account = await accountDeatils.findOne(
-            { _id: botId },
-            { botId: 1, _id: 0 }
-          );
+          let account = await accountDeatils.findOne(
+            { _id: botId },
+            { botId: 1, _id: 0 }
+          );
 
-          const flow = await BotFlow.findOne(
-            { botId: account?.botId,
-              flowType:"NODE_RED"
-            },
-            { _id: 1 }
-          );
+          const flow = await BotFlow.findOne(
+            { botId: account?.botId, flowType: "NODE_RED" },
+            { _id: 1 }
+          );
 
-          const flowId = flow?.id;
-          if (!flowId) {
-            throw new Error("Flow ID not configured for this bot.");
-          }
+          const flowId = flow?.id;
+          if (!flowId) {
+            throw new Error("Flow ID not configured for this bot.");
+          }
 
-          manualFlow = new ManualFlow(flowId,chatMessage.message,userId,botId,sessionId,this.handleUserMessage.bind(this));
-          this.manualFlowInstances.set(socket.id, manualFlow);
-        }
+          manualFlow = new ManualFlow(
+            flowId,
+            chatMessage.message,
+            userId,
+            botId,
+            sessionId,
+            this.handleUserMessage.bind(this)
+          );
+          this.manualFlowInstances.set(socket.id, manualFlow);
+        }
 
-        const result = await manualFlow.run(socket, this.confirmationAwaiting);
-        
-        if (typeof result === "string" || typeof result === "number") {
+        const result = await manualFlow.run(socket, this.confirmationAwaiting);
+        if (typeof result === "string" || typeof result === "number") {
           // Log ko yahan update karein jab flow complete ho jaye
           await Log.findOneAndUpdate(
             { sessionId },
@@ -225,31 +226,34 @@ export class SocketEntity {
                   type: "FINAL_ANSWER",
                   content: result,
                   timestamp: new Date(),
-                }
-              }
+                },
+              },
             }
           );
-          socket.emit("receiveMessageToUser", {
-            message: `nodeRed result: ${result}`,
-            sender: chatMessage.receiver,
-            receiver: chatMessage.sender,
-          });
-        } else {
+          socket.emit("receiveMessageToUser", {
+            message: `nodeRed result: ${result}`,
+            sender: chatMessage.receiver,
+            receiver: chatMessage.sender,
+          });
+        } else {
           // Log ko yahan update karein jab flow completed ho but result na ho
           await Log.findOneAndUpdate(
             { sessionId },
-            { status: "COMPLETED", finalAnswer: "Flow completed without a specific final result." }
+            {
+              status: "COMPLETED",
+              finalAnswer: "Flow completed without a specific final result.",
+            }
           );
-          socket.emit("receiveMessageToUser", {
-            message: "Flow completed without a specific final result.",
-            sender: chatMessage.receiver,
-            receiver: chatMessage.sender,
-          });
-        }
+          socket.emit("receiveMessageToUser", {
+            message: "Flow completed without a specific final result.",
+            sender: chatMessage.receiver,
+            receiver: chatMessage.sender,
+          });
+        }
 
-        this.manualFlowInstances.delete(socket.id);
-        return;
-      }
+        this.manualFlowInstances.delete(socket.id);
+        return;
+      }
 
       if (isMessageSentToBot) {
         let replyFrom = "BOT";
@@ -301,7 +305,12 @@ export class SocketEntity {
     }
   }
 
-  private async runReActAgent(chatMessage: any,socket: Socket,companyId: string,botId: string) {
+  private async runReActAgent(
+    chatMessage: any,
+    socket: Socket,
+    companyId: string,
+    botId: string
+  ) {
     try {
       console.log("react agent started");
 
@@ -397,7 +406,6 @@ export class SocketEntity {
   }
 
   private handleNewUserJoined(newUserDetails: any, socket: Socket) {
-   
     socket.broadcast.emit("receiveNewUserJoined", {
       newUser: newUserDetails.newUser,
     });
@@ -468,5 +476,3 @@ export class SocketEntity {
     this.confirmationAwaiting.delete(socket.id);
   }
 }
-
-

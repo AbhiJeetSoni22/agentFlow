@@ -45,7 +45,7 @@ interface ToolConfig {
   apiEndpoint: string;
   headers: Header[];
   dynamicParams: DynamicParam[];
-  tools: any[]; // यदि tools की structure पता हो तो specific type दें
+  tools: any[]; 
 }
 
 export interface AvailableTool {

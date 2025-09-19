@@ -5,8 +5,6 @@ import { LLMService } from './llmService';
 import { ToolExecutor } from "./toolExecuter";
 import { Socket } from "socket.io";
 import { Log } from '../models';
-
-
 async function addLogStep(sessionId: string, stepData: Omit<any, 'stepNumber' | '_id' | 'timestamp'>) {
     const log = await Log.findOne({ sessionId });
     if (log) {
@@ -33,7 +31,7 @@ export class ReActAgent {
     public github_auth_token: string | null = null;
     public companyId: string;
 public hardcodedFlowId: string | null = null;
-    // Constructor ko simplify kiya gaya
+   
     private constructor(companyId: string) {
         this.companyId = companyId;
         this.dynamicTools = [];

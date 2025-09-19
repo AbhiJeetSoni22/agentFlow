@@ -1,9 +1,8 @@
 import { Document } from "mongoose";
 
-
 export interface IParameter {
   key: string;
-  validation:any;
+  validation: any;
   value: any;
   received: boolean;
 }
@@ -36,21 +35,21 @@ export interface ICondition {
 }
 
 // 🔹 6. Flow Interface
-export interface INode{
+export interface INode {
   userAgentName: string;
   condition?: ICondition[] | null;
   availableFunctions?: IAvailableFunction[] | null;
-  nodeState:'Running'|'Completed'
+  nodeState: "Running" | "Completed";
 }
-export interface IMesssage{
-  message:string;
-  owner:"User"|"System";
+export interface IMesssage {
+  message: string;
+  owner: "User" | "System";
 }
 export interface IExecutingBotFlow extends Document {
   flowName?: string | null;
   nodes?: INode[] | null;
   flowDescription?: string | null;
-  messages:IMesssage[]|null;
+  messages: IMesssage[] | null;
   userId: string;
   companyId: string;
   botId: string;

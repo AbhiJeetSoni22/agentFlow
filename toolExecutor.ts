@@ -109,7 +109,6 @@ export class ToolExecutor {
       console.error("Failed to update executing flow: Document not found.");
     }
   }
-
   private async functionalAgent(
     query: string,
     executingFlowId: string

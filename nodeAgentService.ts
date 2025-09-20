@@ -89,16 +89,16 @@ export async function nodeAgent(
   userId: string,
   socket: Socket,
   confirmationAwaiting: Map<string, (response: string) => void>,
-  accountId:string
+  accountId: string
 ): Promise<string | number | undefined> {
   console.log("Available functions:", node.availableFunctions?.[0]);
- 
+
   try {
-    console.log('node agent name is',node.agentName)
+    console.log("node agent name is", node.agentName);
     // Naya: Yahan React Agent ko check karein
     if (node.agentName === "reactAgent") {
-      console.log('[Decision] Redirecting to ReAct Agent from Node-RED.');
-      const result =await executeReactAgentNode(
+      console.log("[Decision] Redirecting to ReAct Agent from Node-RED.");
+      const result = await executeReactAgentNode(
         node,
         executingFlow.id,
         initialQuery,
@@ -109,8 +109,8 @@ export async function nodeAgent(
         sessionId,
         accountId
       );
-      console.log('result in nodeAgentService',result)
-      return result
+      console.log("result in nodeAgentService", result);
+      return result;
     }
 
     // Purana logic jisme tool fetch aur execute hota hai
@@ -121,11 +121,17 @@ export async function nodeAgent(
     }
     const tool = await fetchAvailableTool(toolId);
     if (!tool) {
-        console.error("❌ Error: Tool not found.");
-        return "Error";
+      console.error("❌ Error: Tool not found.");
+      return "Error";
     }
-   console.log('sending data to the toolExecutor')
-    const result = await ToolExecutor.executeTools(tool, executingFlow.id, query, node, sessionId);
+    console.log("sending data to the toolExecutor");
+    const result = await ToolExecutor.executeTools(
+      tool,
+      executingFlow.id,
+      query,
+      node,
+      sessionId
+    );
 
     if (result === undefined) {
       throw new Error("ToolExecutor.executeTools returned undefined");

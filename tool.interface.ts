@@ -9,7 +9,7 @@ export interface Tool {
     _id: string;
   }>;
   companyId: string;
-  botId: string;
+  agentId: string;
   toolConfig: {
     apiName: string;
     method: string;

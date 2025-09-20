@@ -1,22 +1,23 @@
-// index.ts
+// manualFlow.ts
 
 import { nodeAgent } from "../services/flowService/nodeAgentService";
-import { accountDeatils, BotFlow } from "../models";
-import { ExecutingBotFlow } from "../models/executingFlow.schema";
-import { Log } from "../models/Log"; // Log schema import karein
+import { AgentFlow } from "../models/agentFlow";
+import { AgentFlowState } from "../models/agentFlowState";
+import { Log } from "../models/Log"; 
 import {
-  IExecutingBotFlow,
+  IAgentFlowState,
   IMesssage,
 } from "../interfaces/executingFlow.interface";
 import { Socket } from "socket.io";
-import { ReactAgentService } from "../services/flowService/reactAgentService";
+
 
 export class ManualFlow {
   private flowId: string;
   private initialQuery: string;
   private userId: string;
-  private botId: string;
-  private sessionId: string; // sessionId ko property ke roop mein add karein
+  private agentId: string;
+  private sessionId: string; 
+  private accountId :string;
   private handleUserMessage: (
     chatMessage: any,
     socket: Socket
@@ -25,16 +26,18 @@ export class ManualFlow {
     flowId: string,
     initialQuery: string,
     userId: string,
-    botId: string,
+    agentId: string,
     sessionId: string,
-    handleUserMessage: (chatMessage: any, socket: Socket) => Promise<void> // Accept the new parameter
+    handleUserMessage: (chatMessage: any, socket: Socket) => Promise<void>,
+    accountId:string,
   ) {
     this.flowId = flowId;
     this.initialQuery = initialQuery;
     this.userId = userId;
-    this.botId = botId;
+    this.agentId = agentId;
     this.sessionId = sessionId;
-    this.handleUserMessage = handleUserMessage; // Initialize the new property
+    this.handleUserMessage = handleUserMessage;
+    this.accountId=accountId
   }
 
   public async run(
@@ -42,9 +45,9 @@ export class ManualFlow {
     confirmationAwaiting: Map<string, (response: string) => void>
   ) {
     try {
-      const flowObject = await BotFlow.findById(this.flowId);
+      console.log('flow id is ',this.flowId)
+      const flowObject = await AgentFlow.findById(this.flowId);
 
-      // Manual flow log update karein jab flow start ho
       await Log.findOneAndUpdate(
         { sessionId: this.sessionId },
         {
@@ -63,7 +66,6 @@ export class ManualFlow {
 
       if (flow.length === 0) {
         console.log("No nodes found in flow");
-        // Log update karein ki flow empty hai
         await Log.findOneAndUpdate(
           { sessionId: this.sessionId },
           {
@@ -79,30 +81,31 @@ export class ManualFlow {
         );
         return;
       }
-
+     if(!flowObject?.id){
+      console.log('flow Id is not found ')
+     }
       const executingFlowData = {
-        flowName: flowObject?.flowName,
+        flowId: flowObject?.id,
         flowDescription: flowObject?.flowDescription,
         companyId: flowObject?.companyId,
         messages: [{ message: this.initialQuery, owner: "User" }],
         userId: this.userId,
-        botId: flowObject?.botId,
+        agentId: flowObject?.agentId,
         flowState: "start",
         nodes: [],
         variables: [],
       };
 
-      const newExecutingFlow: IExecutingBotFlow =
-        (await ExecutingBotFlow.create(
+      const newExecutingFlow: IAgentFlowState =
+        (await AgentFlowState.create(
           executingFlowData
-        )) as unknown as IExecutingBotFlow;
+        )) as unknown as IAgentFlowState;
 
       let currentNode = flow[0];
       let nextNodeId: string | number | undefined;
       let currentQuery = this.initialQuery;
-      console.log('current query is ',currentQuery)
+      
       while (true) {
-        // Log update karein jab har node chal raha ho
         await Log.findOneAndUpdate(
           { sessionId: this.sessionId },
           {
@@ -115,131 +118,86 @@ export class ManualFlow {
             },
           }
         );
-        console.log("starting manualflow file");
-        // **Yahan naya check add karein**
-if (currentNode.agentName === "reactAgent") {
-    console.log('[Decision] Redirecting to ReAct Agent from Node-RED.');
-    
-    // Naya: Sabse latest executingFlow document fetch karein, sirf aakhri message ke saath
-    const updatedFlow = await ExecutingBotFlow.findOne(
-        { _id: newExecutingFlow._id },
-        { messages: { $slice: -1 } } // Sirf aakhri element lo
-    );
-    
-    let finalQuery = this.initialQuery;
-    
-    // Naya: Agar aakhri message user ka hai, to usse finalQuery set karein
-    if (updatedFlow && updatedFlow.messages && updatedFlow.messages.length > 0) {
-        const lastMessage = updatedFlow.messages[0];
-        if (lastMessage.owner === "User") {
-            finalQuery = lastMessage.message ?? this.initialQuery;
-        }
-    }
-    
-    console.log('Final query to be sent to ReAct Agent:', finalQuery);
-
-    const reactAgentService = new ReactAgentService(confirmationAwaiting);
-    const flowDoc = await BotFlow.findById(this.flowId);
-    const companyId = flowDoc?.companyId;
-    const hardCoadedFlowId = currentNode?.userAgentName;
-    
-    if (!companyId) {
-        throw new Error("Company ID not found for the flow.");
-    }
-    
-    // Naya: hardcoded query ko finalQuery se replace karein
-    await reactAgentService.runReActAgent(
-        { 
-            message: finalQuery, 
-            sender: this.userId, 
-            receiver: this.botId 
-        },
-        socket,
-        companyId,
-        this.botId,
-        hardCoadedFlowId
-    );
-
-    // Ab flow ko end kar dein
-    return "nodered flow ended.";
-}
+        
+        // Ab yahan koi if condition nahi hai, sara logic nodeAgent se handle hoga
         nextNodeId = await nodeAgent(
           currentNode,
           currentQuery,
           newExecutingFlow,
-          this.sessionId
+          this.sessionId,
+          this.initialQuery,
+          this.agentId,
+          this.userId,
+          socket,
+          confirmationAwaiting,
+          this.accountId
+        );
+       console.log('nextnode id is ',nextNodeId)
+       if (nextNodeId === "PROMPT_REQUIRED") {
+    const updatedFlow = await AgentFlowState.findById(newExecutingFlow._id);
+
+    if (updatedFlow && updatedFlow.messages?.length > 0) {
+        const userPrompt = updatedFlow.messages[updatedFlow.messages.length - 1].message;
+
+        await Log.findOneAndUpdate(
+            { sessionId: this.sessionId },
+            {
+                $push: {
+                    steps: {
+                        type: "USER_PROMPT_REQUIRED",
+                        content: `User prompt required: ${userPrompt}`,
+                        timestamp: new Date(),
+                    },
+                },
+            }
+        );
+       console.log('required parameter asking')
+       console.log('socket sender value is ',this.accountId)
+        socket.emit("receiveMessageToUser", {
+            message: userPrompt,
+            sender: this.accountId,
+            receiver: this.userId,
+        });
+        const newQuery = await new Promise<string>((resolve) => {
+
+            confirmationAwaiting.set(socket.id, resolve);
+        });
+        const messageObject: IMesssage = {
+            message: newQuery,
+            owner: "User",
+        };
+
+        await AgentFlowState.findOneAndUpdate(
+            { _id: newExecutingFlow._id },
+            { $push: { messages: messageObject } },
+            { new: true }
         );
 
-        if (nextNodeId === "PROMPT_REQUIRED") {
-          const updatedFlow = await ExecutingBotFlow.findById(
-            newExecutingFlow._id
-          );
-
-          if (updatedFlow && updatedFlow.messages?.length > 0) {
-            const userPrompt =
-              updatedFlow.messages[updatedFlow.messages.length - 1].message;
-
-            await Log.findOneAndUpdate(
-              { sessionId: this.sessionId },
-              {
-                $push: {
-                  steps: {
-                    type: "USER_PROMPT_REQUIRED",
-                    content: `User prompt required: ${userPrompt}`,
-                    timestamp: new Date(),
-                  },
-                },
-              }
-            );
-
-            socket.emit("receiveMessageToUser", {
-              message: userPrompt,
-              sender: this.botId,
-              receiver: this.userId,
-            });
-
-            const newQuery = await new Promise<string>((resolve) => {
-              confirmationAwaiting.set(socket.id, resolve);
-            });
-
-            const messageObject: IMesssage = {
-              message: newQuery,
-              owner: "User",
-            };
-
-            await ExecutingBotFlow.findOneAndUpdate(
-              { _id: newExecutingFlow._id },
-              { $push: { messages: messageObject } },
-              { new: true }
-            );
-
-            currentQuery = newQuery;
-          } else {
-            console.error("❌ Error: Prompt not found in database.");
-            // Log update karein jab error aaye
-            await Log.findOneAndUpdate(
-              { sessionId: this.sessionId },
-              {
+        currentQuery = newQuery;
+    } else {
+        console.error("❌ Error: Prompt not found in database.");
+        await Log.findOneAndUpdate(
+            { sessionId: this.sessionId },
+            {
                 status: "COMPLETED_WITH_ERROR",
                 $push: {
-                  steps: {
-                    type: "FLOW_ERROR",
-                    content: "Prompt not found in database.",
-                    timestamp: new Date(),
-                  },
+                    steps: {
+                        type: "FLOW_ERROR",
+                        content: "Prompt not found in database.",
+                        timestamp: new Date(),
+                    },
                 },
-              }
-            );
-            break;
-          }
-          continue;
-        } else if (typeof nextNodeId === "string") {
+            }
+        );
+        break;
+    }
+    continue;
+}else if (typeof nextNodeId === "string") {
           const nextNode = flow.find(
             (node) => node.userAgentName === nextNodeId
           );
 
           if (nextNode) {
-            // Log update karein jab next node mil jaye
             await Log.findOneAndUpdate(
               { sessionId: this.sessionId },
               {
@@ -255,8 +213,7 @@ if (currentNode.agentName === "reactAgent") {
             currentNode = nextNode;
             currentQuery = "";
           } else {
-            // Log update karein jab next node na mile
-            await ExecutingBotFlow.findOneAndUpdate(
+            await AgentFlowState.findOneAndUpdate(
               { _id: newExecutingFlow._id },
               { flowState: "completed" },
               { new: true }
@@ -265,7 +222,7 @@ if (currentNode.agentName === "reactAgent") {
             return "Thankyou FlowEnded";
           }
         } else {
-          await ExecutingBotFlow.findOneAndUpdate(
+          await AgentFlowState.findOneAndUpdate(
             { _id: newExecutingFlow._id },
             { flowState: "completed" },
             { new: true }
@@ -273,7 +230,6 @@ if (currentNode.agentName === "reactAgent") {
 
           console.log("✅ Workflow completed. Final output:", nextNodeId);
 
-          // Log update karein jab flow successfuly complete ho
           await Log.findOneAndUpdate(
             { sessionId: this.sessionId },
             {
@@ -293,7 +249,6 @@ if (currentNode.agentName === "reactAgent") {
       }
     } catch (error: any) {
       console.log("error in run method", error.message);
-      // Catch block mein bhi log update karein
       await Log.findOneAndUpdate(
         { sessionId: this.sessionId },
         {

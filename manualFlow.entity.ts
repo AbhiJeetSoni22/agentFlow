@@ -229,7 +229,6 @@ export class ManualFlow {
           );
 
           console.log("✅ Workflow completed. Final output:", nextNodeId);
-
           await Log.findOneAndUpdate(
             { sessionId: this.sessionId },
             {

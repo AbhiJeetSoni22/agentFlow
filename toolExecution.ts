@@ -65,6 +65,7 @@ export async function executeToolById(
   try {
     const tool = await ToolModel.findById(toolId).lean();
     if (!tool) {
+      
       console.error(` Error: Tool not found with ID: ${toolId}`);
       return "Error: Tool not found";
     }

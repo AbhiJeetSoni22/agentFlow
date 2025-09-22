@@ -33,7 +33,6 @@ export interface ICondition {
   answerFromUserAgentName?: string | null;
   completionFromUserAgentName?: string | null;
 }
-
 // 🔹 6. Flow Interface
 export interface INode {
   userAgentName: string;

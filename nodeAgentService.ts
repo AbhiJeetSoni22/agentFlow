@@ -131,7 +131,7 @@ export async function nodeAgent(
     const result = await ToolExecutor.executeTools(tool, executingFlow.id, query, node, sessionId);
 
     if (result === undefined) {
-      throw new Error("ToolExecutor.executeTools returned undefined");
+      throw new Error("ToolExecutor.executeTools returned");
     }
 
     return result;

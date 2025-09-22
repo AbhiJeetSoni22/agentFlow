@@ -75,7 +75,7 @@ export class SocketEntity {
 
   private async handleUserMessage(chatMessage: any, socket: Socket) {
     try {
-      // Step 1: Initialize variables and get bot details
+
       let isMessageSentToBot = true;
       let isSendToNodeRed = true;
       let sendToReactAgent = true;

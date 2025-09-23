@@ -10,7 +10,6 @@ import {
 } from "../interfaces/executingFlow.interface";
 import { Socket } from "socket.io";
 
-
 export class ManualFlow {
   private flowId: string;
   private initialQuery: string;

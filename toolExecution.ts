@@ -56,7 +56,6 @@ export async function executeCrmTool(
   const result = JSON.stringify(args);
   return result;
 }
-
 export async function executeToolById(
   toolId: string,
   args: any,

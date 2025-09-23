@@ -27,7 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const userMessage = input.value.trim();
       appendMessage("user", userMessage);
 
-      // Ab hum is flag ka use kar rahe hain
       if (isFirstQuery) {
         socket.emit("startFlow", {
           flowId: flowId,

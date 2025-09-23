@@ -385,7 +385,6 @@ export class ReActAgent {
     if (!parsed) throw new Error("Could not parse thought from AI response.");
 
     const { thought, toolActions } = parsed;
-
     await addLogStep(sessionId, {
       type: "THOUGHT",
       content: thought,

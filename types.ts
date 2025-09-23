@@ -47,7 +47,6 @@ interface ToolConfig {
   dynamicParams: DynamicParam[];
   tools: any[]; 
 }
-
 export interface AvailableTool {
   _id: ObjectId;
   toolName: string;

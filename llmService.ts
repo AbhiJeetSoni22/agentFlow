@@ -6,7 +6,6 @@ export interface Message {
     role: 'user' | 'assistant' | 'system';
     content: string;
 }
-
 export class LLMService {
 
     private xaiProvider: ReturnType<typeof createXai>;

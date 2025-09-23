@@ -44,6 +44,7 @@ export interface IMesssage {
   message: string;
   owner: "User" | "System";
 }
+
 export interface IExecutingBotFlow extends Document {
   flowName?: string | null;
   nodes?: INode[] | null;

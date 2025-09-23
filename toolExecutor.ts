@@ -24,8 +24,7 @@
      const updatedExecutingFlow = await AgentFlowState.findById(executingFlowId, { messages: 1, _id: -1, companyId: 1, nodes: 1 });
      const lastUserMessage = updatedExecutingFlow?.messages?.slice().reverse().find(msg => msg.owner === "User");
      const finalQuery = lastUserMessage?.message || initialQuery;
- 
- 
+
      const nodeExists = updatedExecutingFlow?.nodes?.some(n => n.userAgentName === node.userAgentName);
  
      if (!nodeExists) {

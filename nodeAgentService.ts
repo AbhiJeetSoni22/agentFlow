@@ -24,6 +24,8 @@ export interface FlowNode {
   condition: any[];
   _id?: string;
   agentFlowId: string;
+  llmModel:string;
+  llmService:string;
 }
 
 interface ObjectId {
@@ -89,12 +91,14 @@ export async function nodeAgent(
   userId: string,
   socket: Socket,
   confirmationAwaiting: Map<string, (response: string) => void>,
-  accountId:string
+  accountId:string,
+  flowId:string
 ): Promise<string | number | undefined> {
   console.log("Available functions:", node.availableFunctions?.[0]);
  
   try {
  
+    // Naya: Yahan React Agent ko check karein
     if (node.agentName === "reactAgent") {
       console.log('[Decision] Redirecting to ReAct Agent from Node-RED.');
       const result =await executeReactAgentNode(
@@ -127,10 +131,10 @@ export async function nodeAgent(
         return "Error";
     }
    console.log('sending data to the toolExecutor')
-    const result = await ToolExecutor.executeTools(tool, executingFlow.id, query, node, sessionId);
+    const result = await ToolExecutor.executeTools(tool, executingFlow.id, query, node, sessionId,flowId);
 
     if (result === undefined) {
-      throw new Error("ToolExecutor.executeTools returned");
+      throw new Error("ToolExecutor.executeTools returned undefined");
     }
 
     return result;

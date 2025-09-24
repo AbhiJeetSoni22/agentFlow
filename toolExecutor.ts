@@ -1,5 +1,5 @@
  import { AgentFlowState } from "../../models/agentFlowState";
- import { LLMService } from "./llmService";
+ import { LLMService } from "../llmService";
  import { executeToolById } from "./flowToolExecution";
  import {IAgentFlowState, IMesssage } from "../../interfaces/executingFlow.interface";
  import { Tool } from "../../interfaces/tool.interface";
@@ -24,7 +24,6 @@
      const updatedExecutingFlow = await AgentFlowState.findById(executingFlowId, { messages: 1, _id: -1, companyId: 1, nodes: 1 });
      const lastUserMessage = updatedExecutingFlow?.messages?.slice().reverse().find(msg => msg.owner === "User");
      const finalQuery = lastUserMessage?.message || initialQuery;
-
      const nodeExists = updatedExecutingFlow?.nodes?.some(n => n.userAgentName === node.userAgentName);
  
      if (!nodeExists) {
@@ -113,13 +112,27 @@
      private node: FlowNode | null;
      private history: Message[];
      private sessionId:string;
- 
+     public static llmModel: string;
+     public static llmService: string;
+  
      private constructor(tool: Tool, node: FlowNode,sessionId:string) {
          this.availableTool = tool;
          this.node = node;
          this.executingFlowObject = null;
          this.history = [];
          this.sessionId=sessionId
+     }
+     public static async assignLLMProperty(flowId:string){
+        if(!flowId){
+            console.log('flowId not found')
+        }
+        
+        const flow = await AgentFlow.findOne({_id:flowId},{llmModel:1,llmService:1,_id:-1})
+            if (flow) {
+        this.llmModel = flow.llmModel;
+        this.llmService = flow.llmService;
+    }
+        
      }
  
      // A static factory method for creating and running the executor
@@ -128,10 +141,12 @@
          executingFlowId: string,
          query: string,
          node: FlowNode,
-         sessionId:string
+         sessionId:string,
+         flowId:string
      ): Promise<string | number | undefined> {
          
          const executor = new ToolExecutor(tool, node,sessionId);
+         this.assignLLMProperty(flowId)
          await executor.updateFlowDocumentAndState(executingFlowId);
          const result = await executor.functionalAgent(query, executingFlowId);
  
@@ -206,6 +221,7 @@
          query: string,
          executingFlowId: string
      ): Promise<string | number | undefined | null> {
+       
          if (!this.availableTool || !this.node) {
              console.error("Error: Tool or Node is not available in functionalAgent.");
              return null;
@@ -247,12 +263,14 @@
              return "Error";
          }
      }
- 
+    
      private async getLLMUpdatedParameters(query: string, latestVariableEntry: any): Promise<string> {
-         const llmService = new LLMService('grok');
+        
+        
+        const llmService = new LLMService(ToolExecutor.llmService);
          const prompt = this.createLLMPrompt(latestVariableEntry);
          this.history.push({ role: "user", content: query });
-         return llmService.callGrok(prompt, this.history, query,"grok-3-mini-fast");
+         return llmService.call(prompt, this.history, query,ToolExecutor.llmModel);
      }
  
      private createLLMPrompt(latestVariableEntry: any): string {
@@ -374,9 +392,9 @@
      }
  
      private async getNextNodeIdFromLLM(result: any, conditions: any[]): Promise<string> {
-         const llmService = new LLMService('grok');
+         const llmService = new LLMService(ToolExecutor.llmService);
          const prompt = `The result of node execution is ${result}. Here are the available conditions: ${JSON.stringify(conditions)}. Based on the result, which condition is met? Return only the 'executeAgent' value of the satisfied condition. For example, if the result is 30, and a condition says "result should be smaller than 50", you should return the corresponding 'executeAgent' ID. Return only the ID, nothing else.`;
-         const llmResponse = await llmService.callGrok(prompt, this.history, `Result: ${result}`,"grok-3-mini-fast");
+         const llmResponse = await llmService.call(prompt, this.history, `Result: ${result}`,ToolExecutor.llmModel);
          return llmResponse.trim();
      }
  

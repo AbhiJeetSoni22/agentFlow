@@ -10,6 +10,7 @@ import {
 } from "../interfaces/executingFlow.interface";
 import { Socket } from "socket.io";
 
+
 export class ManualFlow {
   private flowId: string;
   private initialQuery: string;
@@ -44,7 +45,7 @@ export class ManualFlow {
     confirmationAwaiting: Map<string, (response: string) => void>
   ) {
     try {
-      console.log('flow id is ',this.flowId)
+      
       const flowObject = await AgentFlow.findById(this.flowId);
 
       await Log.findOneAndUpdate(
@@ -80,9 +81,7 @@ export class ManualFlow {
         );
         return;
       }
-     if(!flowObject?.id){
-      console.log('flow Id is not found ')
-     }
+
       const executingFlowData = {
         flowId: flowObject?.id,
         flowDescription: flowObject?.flowDescription,
@@ -129,9 +128,10 @@ export class ManualFlow {
           this.userId,
           socket,
           confirmationAwaiting,
-          this.accountId
+          this.accountId,
+          this.flowId
         );
-       console.log('nextnode id is ',nextNodeId)
+       
        if (nextNodeId === "PROMPT_REQUIRED") {
     const updatedFlow = await AgentFlowState.findById(newExecutingFlow._id);
 
@@ -150,8 +150,7 @@ export class ManualFlow {
                 },
             }
         );
-       console.log('required parameter asking')
-       console.log('socket sender value is ',this.accountId)
+
         socket.emit("receiveMessageToUser", {
             message: userPrompt,
             sender: this.accountId,
@@ -226,7 +225,6 @@ export class ManualFlow {
             { flowState: "completed" },
             { new: true }
           );
-
           console.log("✅ Workflow completed. Final output:", nextNodeId);
           await Log.findOneAndUpdate(
             { sessionId: this.sessionId },

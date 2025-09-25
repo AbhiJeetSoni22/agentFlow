@@ -345,8 +345,7 @@ export class ReActAgent {
             console.log("[ReAct DEBUG] User ko bhejne ke liye koi thought nahi mila.");
         }
         
-        // <<< START: MODIFIED SECTION >>>
-        // HINDI COMMENT: ToolExecutor ko call karte time LLM configuration pass ki ja rahi hai.
+
         if (!this.agentFlow || !this.agentFlow.reactAgent) {
             throw new Error("Cannot execute tools without a loaded agent flow.");
         }

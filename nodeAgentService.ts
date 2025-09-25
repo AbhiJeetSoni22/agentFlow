@@ -116,6 +116,7 @@ export async function nodeAgent(
     }
     if(node.agentName === "replyAgent"){
       console.log('replyAgent called .....')
+      
     }
 
     const toolId = node.availableFunctions?.[0]?.id;

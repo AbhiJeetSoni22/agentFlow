@@ -14,6 +14,7 @@ export interface FlowNode {
   availableFunctions: IAvailable[];
   condition: any[];
   _id?: string;
+  reply?:string
 }
 
 interface ObjectId {

@@ -37,8 +37,7 @@ export class ReActAgent {
         this.agentFlow = null;
     }
 
-    // No changes to create, _loadLatestAgentFlowAndTools, or _getResolvedToolForStateInit methods
-
+  
     public static async create(
     companyId: string,
     hardcodedFlowId?: string,

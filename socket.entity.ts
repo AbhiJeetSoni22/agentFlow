@@ -449,15 +449,7 @@ export class SocketEntity {
         accessToken
       );
     } else {
-      await saveMessage(
-        adminMessage.message,
-        adminMessage.sender,
-        adminMessage.receiver,
-        companyId,
-        ACCOUNT_TYPE.LIVE_CHAT,
-        replyFrom,
-        adminMessage.userId
-      );
+  
       socket.broadcast.emit("receiveMessageToUser", {
         message: adminMessage.message,
         sender: adminMessage.sender,

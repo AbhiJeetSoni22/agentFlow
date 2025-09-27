@@ -1,7 +1,7 @@
 // nodeAgentService.ts
 
 import { IAgentFlowState } from "../../interfaces/executingFlow.interface";
-import { ToolExecutor, executeReactAgentNode } from "./flowToolExecutor"; // executeReactAgentNode ko import kiya
+import { ToolExecutor, executeReactAgentNode, executeReplyAgentNode } from "./flowToolExecutor"; // executeReactAgentNode ko import kiya
 import { ToolModel } from "../../models";
 import { Socket } from "socket.io";
 import { ReactAgentService } from "./reactAgentService";
@@ -24,8 +24,7 @@ export interface FlowNode {
   condition: any[];
   _id?: string;
   agentFlowId: string;
-  llmModel:string;
-  llmService:string;
+  reply?:string; 
 }
 
 interface ObjectId {
@@ -98,6 +97,7 @@ export async function nodeAgent(
  
   try {
  
+    // Naya: Yahan React Agent ko check karein
     if (node.agentName === "reactAgent") {
       console.log('[Decision] Redirecting to ReAct Agent from Node-RED.');
       const result =await executeReactAgentNode(
@@ -115,10 +115,17 @@ export async function nodeAgent(
       return result
     }
     if(node.agentName === "replyAgent"){
-      console.log('replyAgent called .....')
-      
-    }
+      console.log('replyAgent called, executing executeReplyAgentNode...');
+      const replyResult = await executeReplyAgentNode(node);
+      // Agar reply milta hai, to use return karein, jisse flow end ho jaye
+      if (replyResult) {
+          return replyResult;
+      }
+      // Agar reply nahi mila to error return karein
+      return "Error: Reply not found for replyAgent node.";
+    }
 
+    // Purana logic jisme tool fetch aur execute hota hai
     const toolId = node.availableFunctions?.[0]?.id;
     if (!toolId) {
       console.error("❌ Error: No tool ID found in the node.");

@@ -216,8 +216,10 @@ export class ManualFlow {
               { flowState: "completed" },
               { new: true }
             );
-
-            return "Thankyou FlowEnded";
+           if(nextNodeId.startsWith("{")){
+            return "Flow Ended"
+           }
+            return nextNodeId;
           }
         } else {
           await AgentFlowState.findOneAndUpdate(

@@ -465,14 +465,13 @@ private async updateParametersInDb(
         const prompt = `The result of node execution is ${result}. Here are the available conditions: ${JSON.stringify(conditions)}. Based on the result, which condition is met? Return only the 'executeAgent' value of the satisfied condition. For example, if the result is 30, and a condition says "result should be smaller than 50", you should return the corresponding 'executeAgent' ID. Return only the ID, nothing else.`;
         const llmResponse = await llmService.call(prompt, this.history, `Result: ${result}`,ToolExecutor.llmModel);
         
-        // Log the conditional routing LLM call
         await logLLMStep(
             this.sessionId,
             "CONDITIONAL_ROUTING_LLM_CALL",
             `LLM called to determine next node based on execution result.`,
             prompt,
             llmResponse
-        ); // <--- Log LLM call and response
+        ); 
         
         return llmResponse.trim();
     }

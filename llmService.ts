@@ -7,7 +7,6 @@ export interface Message {
     content: string;
 }
 export class LLMService {
-
     private xaiProvider: ReturnType<typeof createXai>;
 
     public call: (

@@ -69,5 +69,5 @@ const ExecutingBotFlowSchema = new Schema({
   },
 });
 
-// Model
+
 export const ExecutingBotFlow = mongoose.model("ExecutingBotFlow", ExecutingBotFlowSchema);

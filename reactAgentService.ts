@@ -1,48 +1,5 @@
 
 
-import { Socket } from "socket.io";
-import { ReActAgent } from "../reactAgent";
-import { ToolExecutor } from "../toolExecuter";
-import { Log } from "../../models/Log";
-import { v4 as uuidv4 } from "uuid";
-import { saveMessage } from "../../controllers";
-import { ACCOUNT_TYPE } from "../../constants";
-import { SocketEntity } from "../../entity/socket.entity";
-
-export class ReactAgentService {
-  private agentInstances: Map<string, ReActAgent> = new Map();
-  private executorInstances: Map<string, ToolExecutor> = new Map();
-  private confirmationAwaiting: Map<string, (response: string) => void>;
-
-  constructor(confirmationAwaiting: Map<string, (response: string) => void>) {
-    this.confirmationAwaiting = confirmationAwaiting;
-  }
-
-  public async runReActAgent(
-    chatMessage: any,
-    socket: Socket,
-    companyId: string,
-    botId: string,
-    botFlowId?: string
-  )
-   {
-    try {
-      let agent = this.agentInstances.get(companyId);
-      let toolExecutor = this.executorInstances.get(companyId);
-
-      if (!agent || !toolExecutor) {
-        console.log(
-          `[ReAct] Initializing new Agent and Executor for Company ID: ${companyId}`
-        );
-        socket.emit("receiveMessageToUser", {
-          message: "Initializing agent...",
-          sender: chatMessage.receiver,
-          receiver: chatMessage.sender,
-        });
-        agent = await ReActAgent.create(companyId, botFlowId);
-        toolExecutor = await ToolExecutor.create(companyId);
-        this.agentInstances.set(companyId, agent);// src/services/reactAgentService.ts
-
 import { Socket } from 'socket.io';
 import { ReActAgent } from '../reactAgent';
 import { ToolExecutor } from '../toolExecuter';

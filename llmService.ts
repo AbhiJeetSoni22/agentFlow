@@ -17,7 +17,7 @@ export class LLMService {
     ) => Promise<string> = async () => {
         throw new Error('Model not initialized properly');
     };
-
+//creating constructor
     constructor(model: string = 'grok') {
 
         this.xaiProvider = createXai({

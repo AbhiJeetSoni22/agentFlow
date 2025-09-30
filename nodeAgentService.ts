@@ -97,7 +97,6 @@ export async function nodeAgent(
  
   try {
  
-    // Naya: Yahan React Agent ko check karein
     if (node.agentName === "reactAgent") {
       console.log('[Decision] Redirecting to ReAct Agent from Node-RED.');
       const result =await executeReactAgentNode(

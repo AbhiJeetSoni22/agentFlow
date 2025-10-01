@@ -36,6 +36,7 @@ const NodeEditorSidebar = ({ nodes, nodeData, onUpdate, onCancel, editingNodeId,
             completionFromUserAgentName: cond.completionFromUserAgentName || null,
         })),
         availableFunctions: (nodeData?.availableFunctions || []).slice(),
+        reply:nodeData.reply || ""
     });
     const [modalConditionData, setModalConditionData] = useState({
         conditionType: "OnAgentCompletion",
@@ -46,7 +47,7 @@ const NodeEditorSidebar = ({ nodes, nodeData, onUpdate, onCancel, editingNodeId,
         answerFromUserAgentName: null,
         completionFromUserAgentName: null,
     });
-    const [replyMessage, setReplyMessage]= useState("")
+    
 
 
     const [hasAddedIssueIdentifier, setHasAddedIssueIdentifier] = useState(false);
@@ -170,6 +171,7 @@ const NodeEditorSidebar = ({ nodes, nodeData, onUpdate, onCancel, editingNodeId,
                 completionFromUserAgentName: cond.completionFromUserAgentName || null,
             })),
             availableFunctions: (nodeData?.availableFunctions || []).slice(),
+            reply:nodeData.reply || ""
         });
     }, [nodeData]);
 
@@ -198,6 +200,10 @@ const NodeEditorSidebar = ({ nodes, nodeData, onUpdate, onCancel, editingNodeId,
             displayAgentName: e.target.value,
         }));
     };
+    
+    const handleReplyChange=(e)=>{
+        setLocalNodeData((prev)=>({...prev,reply:e.target.value}))
+    }
 
     const handleSystemAgentNameChange = (e) => {
         setLocalNodeData((prev) => ({
@@ -296,6 +302,7 @@ const NodeEditorSidebar = ({ nodes, nodeData, onUpdate, onCancel, editingNodeId,
 
     const handleSubmit = () => {
         onUpdate(localNodeData);
+        
         successToast('Node updated successfully');
     };
 
@@ -387,8 +394,8 @@ const NodeEditorSidebar = ({ nodes, nodeData, onUpdate, onCancel, editingNodeId,
                      { nodeData.agentName ==="replyAgent" && ( <div>
                             <label className="block text-sm font-semibold mb-2">Reply Message</label>
                             <textarea
-                                value={replyMessage}
-                                onChange={(e)=>setReplyMessage(e.target.value)}
+                                value={localNodeData.reply}
+                                onChange={handleReplyChange}
                                 style={{ backgroundColor: colors.backgroundPrimary, border: `1px solid ${colors.borderColor}` }}
                                 className="w-full text-sm px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#373A6D] transition-all resize-y min-h-[180px]"
                             />
@@ -396,7 +403,7 @@ const NodeEditorSidebar = ({ nodes, nodeData, onUpdate, onCancel, editingNodeId,
                     </div>
 
                     {/* Functions Field Section */}
-                    {['functionalAgent', 'issueIdentifier'].some(prefix => localNodeData.agentName?.startsWith(prefix)) && (
+                    {['functionalAgent', 'issueIdentifier','reactAgent'].some(prefix => localNodeData.agentName?.startsWith(prefix)) && (
                         <div
                             style={{ backgroundColor: colors.backgroundSecondary, border: `1px solid ${colors.borderColor}` }}
                             className="rounded-2xl p-4"

@@ -123,7 +123,6 @@ export async function nodeAgent(
       return "Error: Reply not found for replyAgent node.";
     }
 
-    // Purana logic jisme tool fetch aur execute hota hai
     const toolId = node.availableFunctions?.[0]?.id;
     if (!toolId) {
       console.error("❌ Error: No tool ID found in the node.");

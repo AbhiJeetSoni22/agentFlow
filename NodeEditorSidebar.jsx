@@ -175,10 +175,18 @@ const NodeEditorSidebar = ({ nodes, nodeData, onUpdate, onCancel, editingNodeId,
         });
     }, [nodeData]);
 
+    const getReactFlows = ()=>{
+        const response =
+    }
     const getFilteredFunctions = () => {
-        return localNodeData.agentName === 'functionalAgent'
-            ? functions
-            : functions.filter(func => func._id !== 'issueIdentifier');
+        let filteredFunction;
+        if(localNodeData.agentName==='functionalAgent'){
+            filteredFunction = functions;
+        }
+        else{
+            filteredFunction = functions.filter(func => func._id !== 'issueIdentifier');
+        }
+        return filteredFunction
     };
 
     const openConditionModal = (index) => {

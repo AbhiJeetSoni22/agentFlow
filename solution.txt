@@ -1,0 +1,5 @@
+react Agent per tool add ka solution
+
+1. create api that will fetch all the agentflow whose flow type is " reactAgent " and return it
+2. use that api in the NodeEditorSlideBar.jsx file in the getReactFlow function.
+3. set these flow as function in the getFilteredFunction and then show them as option in the add tool fields

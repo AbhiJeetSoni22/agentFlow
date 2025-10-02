@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import ConditionModal from './component/ConditionModal';
 import { getFilteredAgentDisplayNames } from './services/Utils';
+import { fetchReactAgentFlow } from './services/botFlowService';
 
 const NodeEditorSidebar = ({ nodes, nodeData, onUpdate, onCancel, editingNodeId, addNode }) => {
     const { colors } = useTheme();
@@ -175,15 +176,22 @@ const NodeEditorSidebar = ({ nodes, nodeData, onUpdate, onCancel, editingNodeId,
         });
     }, [nodeData]);
 
-    const getReactFlows = ()=>{
-        const response =
+    const getReactFlows = async()=>{
+      
+        const reactFlows=await fetchReactAgentFlow(aiAgentData.agentId,token);
+        return reactFlows;
     }
     const getFilteredFunctions = () => {
         let filteredFunction;
         if(localNodeData.agentName==='functionalAgent'){
             filteredFunction = functions;
         }
+        else if(localNodeData.agentName==='reactAgent'){
+             console.log(functions)
+            filteredFunction = getReactFlows();
+        }
         else{
+           
             filteredFunction = functions.filter(func => func._id !== 'issueIdentifier');
         }
         return filteredFunction

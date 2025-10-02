@@ -1,7 +1,11 @@
 // nodeAgentService.ts
 
 import { IAgentFlowState } from "../../interfaces/executingFlow.interface";
-import { ToolExecutor, executeReactAgentNode, executeReplyAgentNode } from "./flowToolExecutor"; // executeReactAgentNode ko import kiya
+import {
+  ToolExecutor,
+  executeReactAgentNode,
+  executeReplyAgentNode,
+} from "./flowToolExecutor"; // executeReactAgentNode ko import kiya
 import { ToolModel } from "../../models";
 import { Socket } from "socket.io";
 import { ReactAgentService } from "./reactAgentService";
@@ -24,7 +28,7 @@ export interface FlowNode {
   condition: any[];
   _id?: string;
   agentFlowId: string;
-  reply?:string; 
+  reply?: string;
 }
 
 interface ObjectId {
@@ -89,16 +93,15 @@ export async function nodeAgent(
   userId: string,
   socket: Socket,
   confirmationAwaiting: Map<string, (response: string) => void>,
-  accountId:string,
-  flowId:string
+  accountId: string,
+  flowId: string
 ): Promise<string | number | undefined> {
   console.log("Available functions:", node.availableFunctions?.[0]);
- 
+
   try {
- 
     if (node.agentName === "reactAgent") {
-      console.log('[Decision] Redirecting to ReAct Agent from Node-RED.');
-      const result =await executeReactAgentNode(
+      console.log("[Decision] Redirecting to ReAct Agent from Node-RED.");
+      const result = await executeReactAgentNode(
         node,
         executingFlow.id,
         initialQuery,
@@ -109,19 +112,19 @@ export async function nodeAgent(
         sessionId,
         accountId
       );
-      console.log('result in nodeAgentService',result)
-      return result
+      console.log("result in nodeAgentService", result);
+      return result;
     }
-    if(node.agentName === "replyAgent"){
-      console.log('replyAgent called, executing executeReplyAgentNode...');
+    if (node.agentName === "replyAgent") {
+      console.log("replyAgent called, executing executeReplyAgentNode...");
       const replyResult = await executeReplyAgentNode(node);
       // Agar reply milta hai, to use return karein, jisse flow end ho jaye
       if (replyResult) {
-          return replyResult;
+        return replyResult;
       }
       // Agar reply nahi mila to error return karein
       return "Error: Reply not found for replyAgent node.";
-    }
+    }
 
     const toolId = node.availableFunctions?.[0]?.id;
     if (!toolId) {
@@ -130,11 +133,18 @@ export async function nodeAgent(
     }
     const tool = await fetchAvailableTool(toolId);
     if (!tool) {
-        console.error("❌ Error: Tool not found.");
-        return "Error";
+      console.error("❌ Error: Tool not found.");
+      return "Error";
     }
-   console.log('sending data to the toolExecutor')
-    const result = await ToolExecutor.executeTools(tool, executingFlow.id, query, node, sessionId,flowId);
+    console.log("sending data to the toolExecutor");
+    const result = await ToolExecutor.executeTools(
+      tool,
+      executingFlow.id,
+      query,
+      node,
+      sessionId,
+      flowId
+    );
 
     if (result === undefined) {
       throw new Error("ToolExecutor.executeTools returned undefined");

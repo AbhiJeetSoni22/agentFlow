@@ -1316,7 +1316,7 @@ const FlowMaker = () => {
     const handleSaveFlow = async (isPublish = false) => {
         try {
             const flowOutput = generateOutput();
-            console.log('flowOutput data is ',flowOutput.data)
+         
             if (!flowOutput || !flowOutput?.data) {
                 console.log(flowOutput)
                 return;

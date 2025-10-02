@@ -1324,7 +1324,6 @@ const FlowMaker = () => {
 
             setSavingFlow(true)
             let result;
-
             if (selectedFlowId) {
                 // Update existing flow
                 result = await updateBotFlow({

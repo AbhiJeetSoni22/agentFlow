@@ -32,7 +32,6 @@ export async function executeApiTool(
   const result = operation(args);
 
   console.log(`✅ Tool execution result: ${result}`);
-
   return result;
 }
 

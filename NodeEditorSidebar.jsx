@@ -70,7 +70,8 @@ const NodeEditorSidebar = ({
   const [isLoading, setIsLoading] = useState(false);
   const token = localStorage.getItem("token");
   const tools = useSelector((state) => state.tools?.tools);
-
+const [reactFlows, setReactFlows] = useState([]);
+const [selectedReactFlow, setSelectedReactFlow] = useState("");
   const fetchFunctionsByBotId = async (agentId) => {
     if (!agentId || functions.length !== 0) {
       errorToast("Bot ID is missing");
@@ -202,9 +203,53 @@ const NodeEditorSidebar = ({
       reply: nodeData.reply || "",
     });
   }, [nodeData]);
+useEffect(() => {
+  if (localNodeData.agentName === "reactAgent") {
+    const fetchFlows = async () => {
+      setIsLoading(true);
+      const flows = await getReactFlows();
+      setReactFlows(flows || []);
+      setIsLoading(false);
+    };
+    fetchFlows();
+  }
+}, [localNodeData.agentName]);
+
+// 🔹 Handle React Flow selection
+const handleReactFlowChange = (flowId) => {
+  if (!flowId) {
+    errorToast("Please select a React Flow to add");
+    return;
+  }
+
+  const flowToAdd = reactFlows.find((flow) => flow._id === flowId);
+
+  if (!flowToAdd) {
+    errorToast("Selected React Flow not found");
+    return;
+  }
+
+  // Agar pehle se same React Flow assign ho gaya hai
+  if (localNodeData.userAgentName === flowToAdd._id) {
+    errorToast("This React Flow is already assigned");
+    return;
+  }
+
+  // Update localNodeData me userAgentName ke andar React Flow ka _id store karna
+  setLocalNodeData((prev) => ({
+    ...prev,
+    userAgentName: flowToAdd._id,
+  }));
+
+  setSelectedReactFlow(""); // dropdown reset
+  successToast(`React Flow "${flowToAdd.flowName}" assigned`);
+};
 
   const getReactFlows = async () => {
+    setIsLoading(true);
     const reactFlows = await fetchReactAgentFlow(aiAgentData.agentId, token);
+    console.log(reactFlows)
+    setIsLoading(false);
     return reactFlows;
   };
   const getFilteredFunctions = () => {
@@ -532,44 +577,80 @@ const NodeEditorSidebar = ({
                     )}
 
                     {/* Add Tool Dropdown */}
-                    <label className="block text-sm font-medium mb-1">
-                      Add Tool
-                    </label>
                     {isLoading ? (
                       <p className="text-sm text-gray-500">
-                        Loading available tools...
+                        Loading available options...
                       </p>
-                    ) : getFilteredFunctions().length > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <select
-                          onChange={(e) => handleAddTool(e.target.value)}
-                          value=""
-                          style={{
-                            backgroundColor: colors.backgroundPrimary,
-                            border: `1px solid ${colors.borderColor}`,
-                          }}
-                          className="w-full max-w-full px-4 py-1 h-9 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#373A6D] transition"
-                        >
-                          <option value="">Select a Tool</option>
-                          {getFilteredFunctions().map((func) => {
-                            const name =
-                              func?.toolName ||
-                              func?.functionName ||
-                              "Missing Name";
-                            return (
-                              <option
-                                key={func._id}
-                                value={func?._id}
-                                title={name}
-                              >
-                                {name.length > 30
-                                  ? name.slice(0, 27) + "..."
-                                  : name}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
+                    ) : localNodeData.agentName === "functionalAgent" ? (
+                      getFilteredFunctions().length > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            onChange={(e) => handleAddTool(e.target.value)}
+                            value=""
+                            style={{
+                              backgroundColor: colors.backgroundPrimary,
+                              border: `1px solid ${colors.borderColor}`,
+                            }}
+                            className="w-full max-w-full px-4 py-1 h-9 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#373A6D] transition"
+                          >
+                            <option value="">Select a Tool</option>
+                            {getFilteredFunctions().map((func) => {
+                              const name =
+                                func?.toolName ||
+                                func?.functionName ||
+                                "Missing Name";
+                              return (
+                                <option
+                                  key={func._id}
+                                  value={func?._id}
+                                  title={name}
+                                >
+                                  {name.length > 30
+                                    ? name.slice(0, 27) + "..."
+                                    : name}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                      ) : null
+                    ) : localNodeData.agentName === "reactAgent" ? (
+                      reactFlows.length > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            onChange={(e) =>
+                              handleReactFlowChange(e.target.value)
+                            }
+                            value={selectedReactFlow}
+                            style={{
+                              backgroundColor: colors.backgroundPrimary,
+                              border: `1px solid ${colors.borderColor}`,
+                            }}
+                            className="w-full max-w-full px-4 py-1 h-9 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#373A6D] transition"
+                          >
+                            <option value="">Select a React Flow</option>
+                            {reactFlows.map((flow) => {
+                              console.log(flow)
+                              const name = flow?.reactAgent.reactAgentName || "Unnamed Flow";
+                              return (
+                                <option
+                                  key={flow._id}
+                                  value={flow._id}
+                                  title={name}
+                                >
+                                  {name.length > 30
+                                    ? name.slice(0, 27) + "..."
+                                    : name}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          No React Flows available
+                        </p>
+                      )
                     ) : null}
 
                     {/* Grab Function Name Input
